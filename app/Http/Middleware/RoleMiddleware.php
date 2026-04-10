@@ -10,9 +10,13 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        // Jika tidak login atau role tidak sesuai, tendang ke login atau dashboard depan
-        if (!Auth::check() || !in_array(Auth::user()->role, $roles)) {
-            return redirect('/login')->with('error', 'Anda tidak punya akses ke halaman tersebut.');
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if (!in_array(Auth::user()->role, $roles)) {
+            // Jika role salah, buang ke landing page biar rantai loop putus
+            return redirect('/')->with('error', 'Akses ditolak.');
         }
 
         return $next($request);

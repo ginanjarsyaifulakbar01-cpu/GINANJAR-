@@ -1,114 +1,206 @@
 @extends('layout.backend.app')
 
 @section('conten')
-  <div class="content">
-    <div class="page-title">Halaman Data Buku</div>
+<div class="content">
+    <div class="page-title" style="display: flex; align-items: center; gap: 10px;">
+        <i class="fas fa-book" style="color: #7c3aff;"></i>
+        <span>Manajemen Koleksi Buku</span>
+    </div>
 
     <div class="table-card">
-
-      <!-- HEADER -->
-      <div class="table-header">
-        <div class="table-header-left">Data Buku</div>
-
-        <div class="table-header-right">
-
-          <!-- SEARCH FORM -->
-          <form method="GET" action="{{ route('buku.index') }}" class="search-wrap">
-            <span class="search-label">SEARCH:</span>
-            <div class="search-box">
-              <i class="fas fa-search"></i>
-              <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari buku...">
+        <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 20px;">
+            <div class="table-header-left">
+                <h3 style="font-size: 16px; font-weight: 700; color: #1e1b3a;">Daftar Buku</h3>
             </div>
-          </form>
 
-          <a href="{{ route('buku.create') }}" class="btn-add">
-            <i class="fas fa-plus"></i>
-            <span>Buku</span>
-          </a>
-
-        </div>
-      </div>
-
-      <!-- TABLE -->
-      <table>
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Cover</th>
-            <th>Judul</th>
-            <th>Penulis</th>
-            <th>Tahun</th>
-            <th>Stok</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          @forelse($bukus as $index => $buku)
-            <tr>
-              <td>{{ $bukus->firstItem() + $index }}</td>
-
-              <!-- COVER -->
-              <td>
-                @if($buku->cover)
-                  <img src="{{ asset('storage/' . $buku->cover) }}" width="40" style="border-radius:6px;">
-                @else
-                  <div class="book-cover-placeholder">
-                    <i class="fas fa-book"></i>
-                  </div>
-                @endif
-              </td>
-
-              <td>{{ $buku->judul }}</td>
-              <td>{{ $buku->penulis }}</td>
-              <td>{{ $buku->tahun_terbit }}</td>
-              <td>{{ $buku->stok }}</td>
-
-              <!-- STATUS -->
-              <td>
-                @if($buku->stok > 0)
-                  <span class="badge badge-dikembalikan">Tersedia</span>
-                @else
-                  <span class="badge badge-dipinjam">Habis</span>
-                @endif
-              </td>
-
-              <!-- ACTION -->
-              <td>
-                <a href="{{ route('buku.edit', $buku->id) }}" class="action-btn">
-                  <i class="fas fa-edit"></i>
-                </a>
-
-                <form action="{{ route('buku.destroy', $buku->id) }}" method="POST" style="display:inline;">
-                  @csrf
-                  @method('DELETE')
-                  <button onclick="return confirm('Yakin hapus?')" class="action-btn">
-                    <i class="fas fa-trash"></i>
-                  </button>
+            <div class="table-header-right" style="display: flex; align-items: center; gap: 15px;">
+                <form method="GET" action="{{ route('buku.index') }}" style="position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                    <input type="text" name="search" value="{{ request('search') }}" 
+                        placeholder="Cari judul atau penulis..." 
+                        style="padding: 8px 15px 8px 35px; border: 1px solid #e2e8f0; border-radius: 8px; width: 220px; font-family: inherit; font-size: 12px; transition: 0.3s;"
+                        onfocus="this.style.borderColor='#7c3aff'; this.style.boxShadow='0 0 0 3px rgba(124, 58, 255, 0.1)'"
+                        onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'">
                 </form>
-              </td>
-            </tr>
 
-          @empty
-            <tr>
-              <td colspan="8" style="text-align:center;">Data buku kosong</td>
-            </tr>
-          @endforelse
-        </tbody>
-      </table>
-
-      <!-- PAGINATION -->
-      <div class="pagination-row">
-        <span class="showing-text">
-          Showing {{ $bukus->firstItem() ?? 0 }} to {{ $bukus->lastItem() ?? 0 }} entries
-        </span>
-
-        <div class="pagination">
-          {{ $bukus->links() }}
+                <a href="{{ route('buku.create') }}" class="btn-add" style="background: #7c3aff; color: #fff; padding: 9px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 12px; transition: 0.3s;">
+                    <i class="fas fa-plus"></i>
+                    <span>Tambah Buku</span>
+                </a>
+            </div>
         </div>
-      </div>
 
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 800px;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="width: 50px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">No</th>
+                        <th style="width: 70px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Cover</th>
+                        <th style="width: 250px; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Informasi Buku</th>
+                        <th style="width: 150px; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Penulis</th>
+                        <th style="width: 80px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Stok</th>
+                        <th style="width: 100px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Status</th>
+                        <th style="width: 100px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Aksi</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @forelse($bukus as $index => $buku)
+                        <tr style="border-bottom: 1px solid #f1f5f9; transition: 0.2s;" onmouseover="this.style.backgroundColor='#fbf9ff'" onmouseout="this.style.backgroundColor='transparent'">
+                            <td style="text-align: center; color: #94a3b8; font-weight: 500;">{{ $bukus->firstItem() + $index }}</td>
+                            
+                            <td style="text-align: center; padding: 10px 0;">
+                                @if($buku->cover)
+                                    <img src="{{ asset('storage/' . $buku->cover) }}" style="width: 40px; height: 55px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.08);">
+                                @else
+                                    <div style="width: 40px; height: 55px; background: #f1f5f9; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #cbd5e1; border: 1px dashed #cbd5e1; margin: 0 auto;">
+                                        <i class="fas fa-book" style="font-size: 14px;"></i>
+                                    </div>
+                                @endif
+                            </td>
+
+                            <td style="padding: 12px;">
+                                <div style="font-weight: 600; color: #1e1b3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $buku->judul }}">
+                                    {{ $buku->judul }}
+                                </div>
+                                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Tahun: {{ $buku->tahun_terbit }}</div>
+                            </td>
+
+                            <td style="padding: 12px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ $buku->penulis }}
+                            </td>
+
+                            <td style="text-align: center; font-weight: 700; color: #1e1b3a;">{{ $buku->stok }}</td>
+
+                            <td style="text-align: center;">
+                                @if($buku->stok > 0)
+                                    <span style="background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-block;">Tersedia</span>
+                                @else
+                                    <span style="background: #fee2e2; color: #b91c1c; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-block;">Habis</span>
+                                @endif
+                            </td>
+
+                            <td style="text-align: center;">
+                                <div style="display: flex; gap: 8px; justify-content: center;">
+                                    <a href="{{ route('buku.edit', $buku->id) }}" style="width: 30px; height: 30px; background: #eef2ff; color: #4338ca; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.2s;" onmouseover="this.style.background='#4338ca'; this.style.color='#fff'" onmouseout="this.style.background='#eef2ff'; this.style.color='#4338ca'">
+                                        <i class="fas fa-edit" style="font-size: 12px;"></i>
+                                    </a>
+
+                                    <form action="{{ route('buku.destroy', $buku->id) }}" method="POST" style="display:inline;">
+                                        @csrf @method('DELETE')
+                                        <button onclick="return confirm('Yakin hapus data ini?')" style="width: 30px; height: 30px; background: #fff1f2; color: #e11d48; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#e11d48'; this.style.color='#fff'" onmouseout="this.style.background='#fff1f2'; this.style.color='#e11d48'">
+                                            <i class="fas fa-trash" style="font-size: 12px;"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 50px 0; color: #94a3b8;">
+                                <img src="https://illustrations.popsy.co/gray/empty-folder.svg" style="width: 120px; margin-bottom: 15px; opacity: 0.5;">
+                                <p style="font-size: 14px;">Belum ada data buku yang tersimpan.</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <<div class="pagination-row" style="display: flex; align-items: center; justify-content: space-between; margin-top: 25px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+            
+            <div style="font-size: 12px; color: #64748b;">
+                Showing <span style="font-weight: 600; color: #1e1b3a;">{{ $bukus->firstItem() ?? 0 }}</span> to <span style="font-weight: 600; color: #1e1b3a;">{{ $bukus->lastItem() ?? 0 }}</span> of {{ $bukus->total() }} entries
+            </div>
+
+            <div class="custom-pagination">
+                @if ($bukus->hasPages())
+                    <ul style="display: flex; list-style: none; gap: 6px; padding: 0; margin: 0; align-items: center;">
+                        
+                        {{-- Tombol Previous --}}
+                        @if ($bukus->onFirstPage())
+                            <li class="page-item-disabled"><i class="fas fa-chevron-left"></i></li>
+                        @else
+                            <li><a href="{{ $bukus->previousPageUrl() }}" class="page-link-custom"><i class="fas fa-chevron-left"></i></a></li>
+                        @endif
+
+                        {{-- Nomor Halaman (Hanya muncul 3 halaman sekitar yang aktif biar gak penuh) --}}
+                        @foreach ($bukus->getUrlRange(max(1, $bukus->currentPage() - 1), min($bukus->lastPage(), $bukus->currentPage() + 1)) as $page => $url)
+                            <li>
+                                <a href="{{ $url }}" class="page-link-custom {{ $page == $bukus->currentPage() ? 'active' : '' }}">
+                                    {{ $page }}
+                                </a>
+                            </li>
+                        @endforeach
+
+                        {{-- Tombol Next --}}
+                        @if ($bukus->hasMorePages())
+                            <li><a href="{{ $bukus->nextPageUrl() }}" class="page-link-custom"><i class="fas fa-chevron-right"></i></a></li>
+                        @else
+                            <li class="page-item-disabled"><i class="fas fa-chevron-right"></i></li>
+                        @endif
+
+                    </ul>
+                @endif
+            </div>
+        </div>
     </div>
-  </div>
+</div>
+</div>
+
+<style>
+    /* Styling Pagination biar lurus & gak ngebug */
+    .page-link-custom {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        text-decoration: none;
+        color: #64748b;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .page-link-custom:hover {
+        background: #f1f5f9;
+        color: #7c3aff;
+        border-color: #7c3aff;
+    }
+
+    .page-link-custom.active {
+        background: #7c3aff;
+        color: #fff;
+        border-color: #7c3aff;
+        box-shadow: 0 4px 10px rgba(124, 58, 255, 0.2);
+    }
+
+    .page-item-disabled {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        color: #cbd5e1;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 11px;
+        cursor: not-allowed;
+    }
+
+    /* Memastikan tabel gak tembus pandang */
+    .table-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+</style>
 @endsection
+
+<
