@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\backend;
+namespace App\Http\Controllers\backend; // Pastikan ini sesuai folder kamu
 
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
@@ -8,12 +8,13 @@ use App\Models\Buku;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class PeminjamanController extends Controller
 {
     /**
-     * BACKEND: List Peminjaman untuk Admin & Petugas
+     * BACKEND: List Peminjaman
      */
     public function index()
     {
@@ -22,7 +23,7 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * FRONTEND: User mengajukan pinjaman
+     * FRONTEND: Action Ajukan Pinjam
      */
     public function ajukan(Request $request, $buku_id)
     {
@@ -43,7 +44,7 @@ class PeminjamanController extends Controller
 
         $tgl_pinjam = $request->tgl_pinjam ? Carbon::parse($request->tgl_pinjam) : now();
 
-        $peminjaman = Peminjaman::create([
+        Peminjaman::create([
             'user_id'      => Auth::id(),
             'buku_id'      => $buku_id,
             'tgl_pinjam'   => $tgl_pinjam,
@@ -58,7 +59,7 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * BACKEND: Admin Approve Pengajuan Baru
+     * BACKEND: Review Peminjaman (Approve/Reject)
      */
     public function review(Request $request, $id)
     {
@@ -79,29 +80,24 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * FRONTEND: User klik "Kembalikan"
+     * FRONTEND: Proses Kembalikan (Cek Denda)
      */
     public function prosesKembalikan($id)
     {
         $p = Peminjaman::findOrFail($id);
-        
         $tgl_sekarang = Carbon::now();
         $tgl_jatuh_tempo = Carbon::parse($p->tgl_kembali);
-        $total_denda = 0;
 
-        // HITUNG DENDA OTOMATIS (Misal Rp 5.000 / hari)
         if ($tgl_sekarang->gt($tgl_jatuh_tempo)) {
             $selisih_hari = $tgl_sekarang->diffInDays($tgl_jatuh_tempo);
             $total_denda = $selisih_hari * 5000;
-        }
-        
-        if ($total_denda > 0) {
+
             $p->update([
                 'total_denda'  => $total_denda,
                 'status_denda' => 'belum_bayar',
             ]);
             
-            return back()->with('error', '💸 Anda terlambat! Silakan bayar denda sebesar Rp ' . number_format($total_denda));
+            return back()->with('error', '💸 Terlambat! Silakan bayar denda Rp ' . number_format($total_denda));
         }
 
         $p->update(['status' => 'proses_kembali']);
@@ -109,25 +105,15 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * FRONTEND: User upload bukti bayar denda
+     * FRONTEND: Bayar Denda
      */
     public function bayarDenda(Request $request, $id)
     {
-        $request->validate([
-            'bukti' => 'required|image|mimes:jpg,png,jpeg|max:2048'
-        ]);
-
+        $request->validate(['bukti' => 'required|image|max:2048']);
         $p = Peminjaman::findOrFail($id);
 
-        if ($p->user_id !== Auth::id()) {
-            return back()->with('error', '❌ Akses ditolak.');
-        }
-
         if ($request->hasFile('bukti')) {
-            if ($p->bukti_bayar && Storage::disk('public')->exists($p->bukti_bayar)) {
-                Storage::disk('public')->delete($p->bukti_bayar);
-            }
-
+            if ($p->bukti_bayar) Storage::disk('public')->delete($p->bukti_bayar);
             $path = $request->file('bukti')->store('bukti_bayar', 'public');
             
             $p->update([
@@ -136,50 +122,33 @@ class PeminjamanController extends Controller
                 'status'       => 'proses_kembali' 
             ]);
 
-            return back()->with('success', '📸 Bukti diunggah! Menunggu verifikasi admin.');
+            return back()->with('success', '📸 Bukti diunggah! Menunggu verifikasi.');
         }
-
-        return back()->with('error', '❌ File rusak.');
+        return back()->with('error', 'Gagal upload.');
     }
 
     /**
-     * BACKEND: Admin Review Pengembalian (Verifikasi Tombol)
+     * BACKEND: Review Pengembalian & Denda
      */
     public function review_kembali(Request $request, $id)
     {
         $p = Peminjaman::findOrFail($id);
 
-        if ($request->action == 'tolak_denda') {
+        if ($request->action == 'setuju') {
             $p->update([
-                'status_denda' => 'belum_bayar',
-                'status'       => 'pinjam' 
+                'status' => 'dikembalikan',
+                'tgl_realisasi_kembali' => now(),
+                'status_denda' => ($p->total_denda > 0) ? 'lunas' : 'no_denda'
             ]);
+            $p->buku->increment('stok');
+            return back()->with('success', '✅ Buku kembali & stok bertambah.');
+        }
+
+        if ($request->action == 'tolak_denda') {
+            $p->update(['status_denda' => 'belum_bayar', 'status' => 'pinjam']);
             return back()->with('error', '❌ Bukti denda ditolak.');
         }
 
-        if ($request->action == 'setuju') {
-            $tgl_sekarang = Carbon::now();
-            $tgl_jatuh_tempo = Carbon::parse($p->tgl_kembali);
-            $denda_final = 0;
-
-            // HITUNG ULANG DENDA SAAT ADMIN KLIK SETUJU
-            if ($tgl_sekarang->gt($tgl_jatuh_tempo)) {
-                $selisih_hari = $tgl_sekarang->diffInDays($tgl_jatuh_tempo);
-                $denda_final = $selisih_hari * 5000;
-            }
-
-            $p->update([
-                'status'                => 'dikembalikan',
-                'tgl_realisasi_kembali' => $tgl_sekarang,
-                'total_denda'           => $denda_final, 
-                'status_denda'          => ($denda_final > 0) ? 'lunas' : 'no_denda'
-            ]);
-            
-            $p->buku->increment('stok');
-            
-            return back()->with('success', '✅ Buku kembali. Denda terhitung: Rp ' . number_format($denda_final));
-        }
-
-        return back()->with('error', '❌ Aksi tidak valid.');
+        return back()->with('error', 'Aksi tidak valid.');
     }
 }

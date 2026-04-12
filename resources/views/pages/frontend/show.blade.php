@@ -122,8 +122,23 @@
     }
     .input-custom:focus { border-color: #2563eb; box-shadow: 0 0 0 4px #dbeafe; }
 
-    .related-section { margin-top: 60px; }
-    .related-title { font-weight: 800; font-size: 24px; margin-bottom: 25px; }
+    .btn-pinjam-full {
+        width: 100%;
+        padding: 18px;
+        background: #2563eb;
+        color: white !important;
+        border: none;
+        border-radius: 16px;
+        font-size: 18px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.3s;
+        display: block;
+        text-align: center;
+        text-decoration: none;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+    }
+    .btn-pinjam-full:hover { background: #1d4ed8; transform: translateY(-2px); color: white; }
 
     @media (max-width: 992px) {
         .detail-wrapper { grid-template-columns: 1fr; }
@@ -133,9 +148,14 @@
 </style>
 
 <div class="container detail-container">
-    <nav style="margin-bottom: 30px;">
+    {{-- NAVIGASI ATAS --}}
+    <nav style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
         <a href="{{ route('katalog') }}" style="text-decoration: none; color: #64748b; font-weight: 700; display: flex; align-items: center; gap: 8px;">
             <i class="fas fa-arrow-left"></i> Kembali ke Katalog
+        </a>
+        
+        <a href="{{ route('riwayat.pinjam') }}" style="text-decoration: none; color: #2563eb; font-weight: 700; display: flex; align-items: center; gap: 8px; background: #dbeafe; padding: 10px 20px; border-radius: 14px; font-size: 14px;">
+            <i class="fas fa-history"></i> Riwayat Pinjam Saya
         </a>
     </nav>
 
@@ -143,7 +163,7 @@
         <div class="detail-cover-wrapper">
             <div class="detail-img-container">
                 @php
-                    $imagePath = 'https://via.placeholder.com/400x600?text=No+Cover';
+                    $imagePath = 'https://placeholder.com';
                     if ($buku->cover) {
                         $imagePath = Str::startsWith($buku->cover, 'cover-img') 
                                      ? asset($buku->cover) 
@@ -163,9 +183,11 @@
         </div>
 
         <div class="detail-content">
+            {{-- ALERT BERHASIL --}}
             @if(session('success'))
-                <div style="background: #d1fae5; color: #065f46; padding: 15px; border-radius: 15px; margin-bottom: 20px; font-weight: 700; border: 1px solid #10b981;">
-                    <i class="fas fa-check-circle"></i> {{ session('success') }}
+                <div style="background: #d1fae5; color: #065f46; padding: 20px; border-radius: 15px; margin-bottom: 25px; font-weight: 700; border: 1px solid #10b981; display: flex; justify-content: space-between; align-items: center;">
+                    <div><i class="fas fa-check-circle"></i> {{ session('success') }}</div>
+                    <a href="{{ route('riwayat.pinjam') }}" style="background: #059669; color: white; padding: 8px 16px; border-radius: 10px; font-size: 13px; text-decoration: none;">Cek Status <i class="fas fa-arrow-right"></i></a>
                 </div>
             @endif
 
@@ -179,22 +201,10 @@
             <h1 class="book-main-title">{{ $buku->judul }}</h1>
 
             <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Penulis</span>
-                    <span class="info-value">{{ $buku->penulis ?? '-' }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Penerbit</span>
-                    <span class="info-value">{{ $buku->penerbit ?? '-' }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Tahun Terbit</span>
-                    <span class="info-value">{{ $buku->tahun_terbit ?? '-' }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Kode Buku</span>
-                    <span class="info-value">{{ $buku->id }}</span>
-                </div>
+                <div class="info-item"><span class="info-label">Penulis</span><span class="info-value">{{ $buku->penulis ?? '-' }}</span></div>
+                <div class="info-item"><span class="info-label">Penerbit</span><span class="info-value">{{ $buku->penerbit ?? '-' }}</span></div>
+                <div class="info-item"><span class="info-label">Tahun Terbit</span><span class="info-value">{{ $buku->tahun_terbit ?? '-' }}</span></div>
+                <div class="info-item"><span class="info-label">Kode Buku</span><span class="info-value">{{ $buku->id }}</span></div>
             </div>
 
             <div class="description-box">
@@ -202,66 +212,58 @@
                 <p>{{ $buku->deskripsi ?? 'Tidak ada deskripsi untuk buku ini.' }}</p>
             </div>
 
-            @if($buku->stok > 0)
-                <form action="{{ route('buku.pinjam', $buku->id) }}" method="POST">
+            {{-- LOGIKA STATUS PINJAM --}}
+            @php
+                $statusPinjam = \App\Models\Peminjaman::where('user_id', Auth::id())
+                    ->where('buku_id', $buku->id)
+                    ->whereIn('status', ['pending', 'pinjam', 'proses_kembali'])
+                    ->first();
+
+                $isTerlambat = false;
+                if ($statusPinjam && $statusPinjam->status == 'pinjam' && \Carbon\Carbon::now()->gt($statusPinjam->tgl_kembali)) {
+                    $isTerlambat = true;
+                }
+            @endphp
+
+            @if($statusPinjam)
+                <div style="background: {{ $isTerlambat ? '#fee2e2' : '#eff6ff' }}; 
+                            border: 2px solid {{ $isTerlambat ? '#ef4444' : '#2563eb' }}; 
+                            padding: 30px; border-radius: 24px; text-align: center;">
+                    <div style="font-size: 18px; font-weight: 800; color: {{ $isTerlambat ? '#b91c1c' : '#1e40af' }}; margin-bottom: 10px;">
+                        <i class="fas {{ $isTerlambat ? 'fa-clock' : 'fa-info-circle' }}"></i> 
+                        {{ $isTerlambat ? 'Peringatan: Peminjaman Terlambat!' : 'Anda sedang memproses buku ini' }}
+                    </div>
+                    <p style="color: {{ $isTerlambat ? '#991b1b' : '#64748b' }}; margin-bottom: 20px;">
+                        Status: <strong>{{ $isTerlambat ? 'TERLAMBAT' : strtoupper($statusPinjam->status) }}</strong>
+                    </p>
+                    <a href="{{ route('riwayat.pinjam') }}" class="btn-pinjam-full" style="background: {{ $isTerlambat ? '#ef4444' : '#2563eb' }};">
+                        {{ $isTerlambat ? 'Selesaikan Denda Sekarang' : 'Lihat Detail Peminjaman' }}
+                    </a>
+                </div>
+            @elseif($buku->stok > 0)
+                <form action="{{ route('peminjaman.ajukan', $buku->id) }}" method="POST">
                     @csrf
                     <div class="form-peminjaman-box">
                         <div style="margin-bottom: 20px;">
-                            <label class="info-label" style="color: #0f172a; font-size: 15px;">
-                                <i class="fas fa-calendar-day text-primary" style="margin-right: 5px;"></i> Rencana Tanggal Pinjam
-                            </label>
-                            <input type="date" name="tgl_pinjam" class="input-custom" 
-                                   value="{{ date('Y-m-d') }}" required>
+                            <label class="info-label" style="color: #0f172a; font-size: 15px;"><i class="fas fa-calendar-day text-primary"></i> Rencana Tanggal Pinjam</label>
+                            <input type="date" name="tgl_pinjam" class="input-custom" value="{{ date('Y-m-d') }}" required>
                         </div>
-
                         <div>
-                            <label class="info-label" style="color: #0f172a; font-size: 15px;">
-                                <i class="fas fa-hourglass-half text-primary" style="margin-right: 5px;"></i> Durasi Peminjaman
-                            </label>
+                            <label class="info-label" style="color: #0f172a; font-size: 15px;"><i class="fas fa-hourglass-half text-primary"></i> Durasi Peminjaman</label>
                             <div style="display: flex; align-items: center; gap: 15px; margin-top: 5px;">
-                                <div style="flex: 1;">
-                                    <input type="number" name="durasi" class="input-custom" value="7" min="7" required>
-                                </div>
+                                <div style="flex: 1;"><input type="number" class="input-custom" value="7" readonly></div>
                                 <div style="font-weight: 800; color: #64748b; padding-top: 8px;">Hari</div>
                             </div>
                         </div>
-
-                        <p style="font-size: 11px; color: #2563eb; margin-top: 15px; font-weight: 700; margin-bottom: 0;">
-                            *Mode Testing: Tanggal bisa diatur ke masa lalu untuk simulasi denda.
-                        </p>
                     </div>
-
-                    <button type="submit" style="width: 100%; padding: 18px; border-radius: 18px; border: none; background: #2563eb; color: white; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);">
-                        <i class="fas fa-paper-plane" style="margin-right: 10px;"></i> Ajukan Peminjaman Sekarang
-                    </button>
+                    <button type="submit" class="btn-pinjam-full"><i class="fas fa-book-reader"></i> Ajukan Peminjaman Sekarang</button>
                 </form>
             @else
-                <button disabled style="width: 100%; padding: 18px; border-radius: 18px; border: none; background: #94a3b8; color: white; font-weight: 800; font-size: 16px; cursor: not-allowed;">
-                    <i class="fas fa-times-circle" style="margin-right: 10px;"></i> Stok Habis
-                </button>
+                <div style="background: #f1f5f9; color: #64748b; padding: 25px; border-radius: 20px; text-align: center; font-weight: 700; border: 1px solid #e2e8f0;">
+                    <i class="fas fa-info-circle"></i> Maaf, saat ini buku tidak tersedia untuk dipinjam.
+                </div>
             @endif
         </div>
     </div>
-
-    @if($related_books->count() > 0)
-    <div class="related-section">
-        <h2 class="related-title">Mungkin Kamu Suka</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
-            @foreach($related_books as $rb)
-            <a href="{{ route('buku.detail', $rb->id) }}" style="text-decoration: none; background: white; padding: 12px; border-radius: 20px; border: 1px solid #e2e8f0; display: block;">
-                <div style="width: 100%; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; margin-bottom: 12px;">
-                    @php
-                        $rbPath = $rb->cover 
-                                ? (Str::startsWith($rb->cover, 'cover-img') ? asset($rb->cover) : asset('storage/' . $rb->cover)) 
-                                : 'https://via.placeholder.com/200x300?text=No+Cover';
-                    @endphp
-                    <img src="{{ $rbPath }}" style="width: 100%; height: 100%; object-fit: cover;">
-                </div>
-                <h5 style="color: #0f172a; font-weight: 800; font-size: 14px; margin: 0;">{{ Str::limit($rb->judul, 30) }}</h5>
-            </a>
-            @endforeach
-        </div>
-    </div>
-    @endif
 </div>
 @endsection

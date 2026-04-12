@@ -10,8 +10,9 @@ use App\Http\Controllers\backend\CategoryController;
 use App\Http\Controllers\backend\PeminjamanController;
 
 /*
+
 |--------------------------------------------------------------------------
-| Web Routes - Perpustakaan Digital (GinxAdmin)
+| Web Routes - Perpustakaan Digital
 |--------------------------------------------------------------------------
 */
 
@@ -32,13 +33,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/katalog', [FrontendController::class, 'katalog'])->name('katalog');
     Route::get('/buku/{id}', [FrontendController::class, 'detail'])->name('buku.detail');
     Route::get('/profile', function () { return view('pages.frontend.profile'); })->name('profile');
-    
-    // Alur Peminjaman User
     Route::get('/riwayat-pinjam', [FrontendController::class, 'riwayatPinjam'])->name('riwayat.pinjam');
-    Route::post('/buku/{id}/pinjam', [FrontendController::class, 'pinjam'])->name('buku.pinjam');
     Route::get('/peminjaman/detail/{id}', [FrontendController::class, 'detailPeminjaman'])->name('peminjaman.detail'); 
     
-    // Alur Pengembalian & Denda (Logic ada di PeminjamanController)
+    /** 
+     * ALUR PEMINJAMAN (FE)
+     * Menggunakan PeminjamanController agar logika terpusat
+     */
+    Route::post('/buku/{id}/ajukan', [PeminjamanController::class, 'ajukan'])->name('peminjaman.ajukan');
     Route::post('/peminjaman/{id}/proses-kembali', [PeminjamanController::class, 'prosesKembalikan'])->name('peminjaman.proses_kembali');
     Route::post('/peminjaman/{id}/bayar-denda', [PeminjamanController::class, 'bayarDenda'])->name('peminjaman.bayar_denda');
 
@@ -46,26 +48,21 @@ Route::middleware('auth')->group(function () {
     // --- 3. BACKEND ROUTES (Admin & Petugas) ---
     Route::group(['prefix' => 'admin', 'middleware' => ['role:admin,petugas']], function () {
         
-        // Dashboard & Profile Admin
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
         Route::get('/profile-admin', function () { return view('pages.backend.profile'); })->name('admin.profile');
         
-        // MODUL PEMINJAMAN (Manajemen Transaksi)
+        // MANAJEMEN PEMINJAMAN (BE)
         Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
         
-        /**
-         * ACTION VERIFIKASI:
-         * review -> Approve pinjam awal (dari status 'pending' ke 'pinjam')
-         * review_kembali -> Approve pengembalian (dari 'proses_kembali' ke 'dikembalikan')
-         */
+        // Approve Pinjam (Pending -> Pinjam)
         Route::post('/peminjaman/{id}/review', [PeminjamanController::class, 'review'])->name('peminjaman.review');
+        
+        // Approve Kembali (Proses Kembali -> Dikembalikan) + Verifikasi Foto Denda
         Route::post('/peminjaman/{id}/review-kembali', [PeminjamanController::class, 'review_kembali'])->name('peminjaman.review_kembali');
 
         // MASTER DATA
         Route::resource('buku', BukuController::class);
         Route::resource('categories', CategoryController::class);
-        
-        // Kelola User hanya bisa diakses oleh Admin
         Route::resource('user', UserBackendController::class)->middleware('role:admin');
     });
 });

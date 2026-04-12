@@ -1,171 +1,159 @@
 @extends('Layout.backend.app')
 
 @section('content')
-<style>
-    .page-content { background: #f8fafc; border-radius: 15px; padding: 20px; font-family: 'Plus Jakarta Sans', sans-serif; }
-    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
-    .table-modern th { font-size: 0.7rem; text-transform: uppercase; color: #94a3b8; padding: 0 20px 10px; }
-    .table-modern td { background: #fff; padding: 18px 20px; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    .table-modern tr td:first-child { border-radius: 12px 0 0 12px; }
-    .table-modern tr td:last-child { border-radius: 0 12px 12px 0; }
-    
-    .badge-status { padding: 6px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
-    .pending { background: #fff7ed; color: #c2410c; }
-    .pinjam { background: #eef2ff; color: #4338ca; }
-    .review { background: #e0f2fe; color: #0369a1; }
-    .kembali { background: #ecfdf5; color: #15803d; }
+<!-- Import Font & Icon Premium -->
+<link href="https://googleapis.com" rel="stylesheet">
+<link rel="stylesheet" href="https://cloudflare.com">
 
-    .btn-verif { background: #6366f1; color: white; border-radius: 10px; padding: 8px 16px; font-size: 0.8rem; font-weight: 700; border: none; transition: 0.3s; text-decoration: none; cursor: pointer; }
-    .btn-verif:hover { background: #4f46e5; transform: translateY(-2px); color: white; }
-    .modal-content { border-radius: 20px; border: none; }
-    .img-bukti { width: 100%; max-height: 250px; object-fit: contain; border-radius: 12px; border: 2px dashed #e2e8f0; }
+<style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f7fe; }
+    .card-admin { border-radius: 24px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; }
+    
+    .table thead th { 
+        background: #f8fafc; 
+        text-transform: uppercase; 
+        font-size: 11px; 
+        font-weight: 800; 
+        color: #64748b; 
+        padding: 20px;
+    }
+    
+    .table tbody td { padding: 20px; vertical-align: middle; }
+    
+    /* Bukti Denda Preview */
+    .bukti-container {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .bukti-container:hover { transform: scale(1.1); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
+    .bukti-img-preview { width: 100%; height: 100%; object-fit: cover; }
+    
+    /* Badge Custom */
+    .badge-status { padding: 8px 14px; border-radius: 10px; font-weight: 700; font-size: 11px; display: inline-block; }
+    .bg-pending { background: #fff7ed; color: #c2410c; }
+    .bg-pinjam { background: #eff6ff; color: #1d4ed8; }
+    .bg-proses { background: #f0fdf4; color: #15803d; }
+    .bg-late { background: #fee2e2; color: #b91c1c; }
+
+    .btn-verify { border-radius: 12px; padding: 10px 18px; font-size: 12px; font-weight: 800; border: none; transition: 0.3s; }
+    .btn-approve { background: #10b981; color: white; }
+    .btn-approve:hover { background: #059669; }
+    .btn-reject { background: #ef4444; color: white; }
 </style>
 
-@if(session('success'))
-    <div class="alert alert-success mx-3 rounded-4 border-0 shadow-sm">{{ session('success') }}</div>
-@endif
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-800 text-dark">Manajemen Transaksi</h3>
+            <p class="text-muted">Verifikasi bukti denda dan persetujuan peminjaman buku.</p>
+        </div>
+    </div>
 
-<div class="page-content">
-    <div class="table-responsive" style="overflow: visible;">
-        <table class="table-modern">
-            <thead>
-                <tr>
-                    <th>Buku</th>
-                    <th>Peminjam</th>
-                    <th>Jadwal & Denda</th>
-                    <th>Status Pinjam</th>
-                    <th class="text-center">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($data as $p)
-                <tr>
-                    <td>
-                        <div class="fw-bold text-dark">{{ $p->buku->judul }}</div>
-                        <small class="text-muted">ID: #TRX-{{ str_pad($p->id, 5, '0', STR_PAD_LEFT) }}</small>
-                    </td>
-                    <td>
-                        <div class="fw-bold">{{ $p->user->name }}</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">{{ $p->user->email }}</small>
-                    </td>
-                    <td>
-                        <div style="font-size: 0.8rem;">
-                            <span class="text-muted">Batas:</span> 
-                            <span class="fw-bold text-dark">{{ $p->tgl_kembali ? \Carbon\Carbon::parse($p->tgl_kembali)->format('d/m/Y') : '-' }}</span>
-                            
-                            @php
-                                $tglKembali = \Carbon\Carbon::parse($p->tgl_kembali);
-                                $tglSekarang = \Carbon\Carbon::now();
-                                $dendaOtomatis = 0;
-                                
-                                // Jika status belum dikembalikan dan sudah lewat tanggal kembali
-                                if ($p->status != 'dikembalikan' && $tglSekarang->gt($tglKembali)) {
-                                    $hari = $tglSekarang->diffInDays($tglKembali);
-                                    $dendaOtomatis = $hari * 5000;
-                                }
-                                
-                                // Gunakan denda tertinggi antara hitungan sistem atau yang sudah tercatat di DB
-                                $totalDenda = max($dendaOtomatis, $p->total_denda);
-                            @endphp
-
-                            <div class="mt-1">
-                                @if($totalDenda > 0)
-                                    <span class="badge bg-danger" style="font-size: 0.65rem;">
-                                        Denda: Rp {{ number_format($totalDenda, 0, ',', '.') }}
-                                    </span>
-                                @else
-                                    <small class="text-muted italic">Tanpa Denda</small>
-                                @endif
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        @if($p->status == 'pending') <span class="badge-status pending">Menunggu Approval</span>
-                        @elseif($p->status == 'pinjam') <span class="badge-status pinjam">Aktif Dipinjam</span>
-                        @elseif($p->status == 'proses_kembali') <span class="badge-status review">Review Pengembalian</span>
-                        @elseif($p->status == 'dikembalikan') <span class="badge-status kembali">Selesai</span>
-                        @endif
-                    </td>
-                    <td class="text-center">
-                        {{-- STATUS PENDING --}}
-                        @if($p->status == 'pending')
-                            <div class="d-flex gap-2 justify-content-center">
-                                <form action="{{ route('peminjaman.review', $p->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" name="action" value="setuju" class="btn btn-sm btn-success rounded-3 px-3">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
-                                <form action="{{ route('peminjaman.review', $p->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" name="action" value="tolak" class="btn btn-sm btn-danger rounded-3 px-3">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </form>
-                            </div>
-
-                        {{-- STATUS PROSES KEMBALI --}}
-                        @elseif($p->status == 'proses_kembali')
-                            <button type="button" class="btn-verif" data-bs-toggle="modal" data-bs-target="#modalVerif{{ $p->id }}">
-                                <i class="bi bi-shield-check me-1"></i> Verif Kembali
-                            </button>
-
-                            <div class="modal fade" id="modalVerif{{ $p->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content shadow-lg text-start">
-                                        <form action="{{ route('peminjaman.review_kembali', $p->id) }}" method="POST">
-                                            @csrf
-                                            <div class="modal-body p-4">
-                                                <h5 class="fw-bold mb-3 text-center">Konfirmasi Pengembalian</h5>
-                                                <div class="p-3 bg-light rounded-4 mb-3">
-                                                    <small class="text-muted d-block text-start">Peminjam:</small>
-                                                    <span class="fw-bold d-block text-start">{{ $p->user->name }}</span>
-                                                    <small class="text-muted d-block mt-2 text-start">Buku:</small>
-                                                    <span class="fw-bold d-block text-start">{{ $p->buku->judul }}</span>
-                                                </div>
-
-                                                @if($totalDenda > 0)
-                                                    <div class="text-center mb-3">
-                                                        <small class="fw-bold d-block mb-2">Status Denda:</small>
-                                                        @if($p->bukti_bayar)
-                                                            <a href="{{ asset('storage/' . $p->bukti_bayar) }}" target="_blank">
-                                                                <img src="{{ asset('storage/' . $p->bukti_bayar) }}" class="img-bukti" alt="Bukti">
-                                                            </a>
-                                                            <span class="badge bg-success d-block mt-2">Bukti Pembayaran Tersedia</span>
-                                                        @else
-                                                            <div class="alert alert-warning py-2 mb-0" style="font-size: 0.8rem;">
-                                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> User belum upload bukti bayar denda.
-                                                            </div>
-                                                        @endif
-                                                        <span class="badge bg-danger d-block mt-2">Rp {{ number_format($totalDenda, 0, ',', '.') }}</span>
-                                                    </div>
-                                                @endif
-                                                <p class="text-center mt-3 mb-0">Apakah buku sudah diterima kembali dengan baik?</p>
-                                            </div>
-                                            <div class="modal-footer border-0 pb-4 justify-content-center">
-                                                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" name="action" value="setuju" class="btn btn-success px-4 fw-bold shadow-sm">Selesaikan</button>
-                                            </div>
-                                        </form>
+    <div class="card card-admin">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Peminjam & Buku</th>
+                            <th>Jadwal</th>
+                            <th>Status & Denda</th>
+                            <th>Bukti Pembayaran</th>
+                            <th class="text-center">Aksi Konfirmasi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($data as $p)
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div style="width: 40px; height: 40px; background: #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #475569;">
+                                        {{ substr($p->user->name, 0, 1) }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ $p->user->name }}</div>
+                                        <div class="small text-primary fw-bold">{{ Str::limit($p->buku->judul, 30) }}</div>
                                     </div>
                                 </div>
-                            </div>
+                            </td>
+                            <td>
+                                <div class="small fw-bold text-muted">Pinjam: {{ \Carbon\Carbon::parse($p->tgl_pinjam)->format('d/m/y') }}</div>
+                                <div class="small fw-bold text-danger">Batas: {{ \Carbon\Carbon::parse($p->tgl_kembali)->format('d/m/y') }}</div>
+                            </td>
+                            <td>
+                                @if($p->status == 'pending')
+                                    <span class="badge-status bg-pending">PENGAJUAN</span>
+                                @elseif($p->status == 'pinjam')
+                                    <span class="badge-status bg-pinjam">DIPINJAM</span>
+                                @elseif($p->status == 'proses_kembali')
+                                    <span class="badge-status bg-proses">PROSES BALIK</span>
+                                @else
+                                    <span class="badge-status bg-light text-muted">SELESAI</span>
+                                @endif
+                                
+                                @if($p->total_denda > 0)
+                                    <div class="mt-1 small fw-bold text-danger">Tagihan: Rp{{ number_format($p->total_denda) }}</div>
+                                @endif
+                            </td>
+                            <td>
+                                @if($p->bukti_bayar)
+                                    <div class="bukti-container" data-bs-toggle="modal" data-bs-target="#modalBukti{{ $p->id }}">
+                                        <img src="{{ asset('storage/'.$p->bukti_bayar) }}" class="bukti-img-preview">
+                                        <div style="position: absolute; bottom: 0; background: rgba(0,0,0,0.5); width: 100%; color: white; font-size: 8px; text-align: center;">ZOOM</div>
+                                    </div>
 
-                        {{-- STATUS SELESAI --}}
-                        @elseif($p->status == 'dikembalikan')
-                            <span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Selesai</span>
-                        
-                        {{-- SEDANG DIPINJAM --}}
-                        @else
-                            <small class="text-muted italic">Menunggu Pengembalian</small>
-                        @endif
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="5" class="text-center py-5">Belum ada transaksi.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+                                    <!-- MODAL ZOOM FOTO -->
+                                    <div class="modal fade" id="modalBukti{{ $p->id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content bg-transparent border-0">
+                                                <div class="modal-body p-0 text-center">
+                                                    <img src="{{ asset('storage/'.$p->bukti_bayar) }}" class="img-fluid rounded-4 shadow-lg">
+                                                    <button type="button" class="btn btn-light mt-3 fw-bold rounded-pill px-4" data-bs-dismiss="modal">Tutup Preview</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-muted small italic">Tidak ada bukti</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                @if($p->status == 'pending')
+                                    <form action="{{ route('peminjaman.review', $p->id) }}" method="POST" class="d-flex gap-2 justify-content-center">
+                                        @csrf
+                                        <button name="action" value="setuju" class="btn-verify btn-approve">SETUJU</button>
+                                        <button name="action" value="tolak" class="btn-verify btn-reject">TOLAK</button>
+                                    </form>
+                                @elseif($p->status == 'proses_kembali')
+                                    <form action="{{ route('peminjaman.review_kembali', $p->id) }}" method="POST" class="d-flex gap-2 justify-content-center">
+                                        @csrf
+                                        <button name="action" value="setuju" class="btn-verify btn-approve">TERIMA BUKU</button>
+                                        @if($p->status_denda == 'pending_admin')
+                                            <button name="action" value="tolak_denda" class="btn-verify btn-reject" title="Bukti Salah">TOLAK BUKTI</button>
+                                        @endif
+                                    </form>
+                                @else
+                                    <i class="fas fa-check-circle text-success shadow-sm p-2 rounded-circle"></i>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted fw-bold">Belum ada transaksi masuk.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+    <div class="mt-4">{{ $data->links() }}</div>
 </div>
 @endsection

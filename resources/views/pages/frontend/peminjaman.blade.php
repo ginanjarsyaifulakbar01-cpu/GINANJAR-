@@ -1,191 +1,192 @@
 @extends('Layout.frontend.app')
 
 @section('content')
+<!-- Import Font & Icon Premium -->
+<link href="https://googleapis.com" rel="stylesheet">
+<link rel="stylesheet" href="https://cloudflare.com">
+
 <style>
-    /* 1. LAYOUT & TYPOGRAPHY */
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-
-    .content-wrapper {
-        padding-top: 140px; 
-        padding-bottom: 80px;
-        background-color: #f8f9fa; 
-        min-height: 100vh;
-        font-family: 'Plus Jakarta Sans', sans-serif;
+    :root {
+        --primary: #2563eb;
+        --bg-body: #f8fafc;
+        --danger: #ef4444;
     }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-body); color: #1e293b; }
+    .content-wrapper { padding: 140px 0 80px; }
 
-    .header-info { margin-bottom: 40px; }
-    .header-info h2 { 
-        font-weight: 800; 
-        color: #1a1a1a; 
-        letter-spacing: -1px; 
-    }
-
-    /* 2. JCARD DESIGN (Horizontal Style) */
-    .j-card {
+    /* Card Styling */
+    .loan-card {
         background: #ffffff;
-        border: 1px solid #eef0f2;
-        border-radius: 24px;
+        border-radius: 28px;
+        border: 1px solid #e2e8f0;
         padding: 24px;
-        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-        text-decoration: none !important;
-        display: block;
-        height: 100%;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 25px;
+        position: relative;
     }
-    .j-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.06);
-        border-color: #2563eb;
+    .loan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+        border-color: var(--primary);
     }
 
-    /* Thumbnail / Cover */
-    .j-cover-wrapper {
-        flex-shrink: 0;
-    }
-    .j-cover {
-        width: 100px;
-        height: 145px;
+    .book-cover {
+        width: 110px;
+        height: 160px;
         object-fit: cover;
-        border-radius: 16px;
+        border-radius: 18px;
         background: #f1f5f9;
-        box-shadow: 5px 10px 20px rgba(0,0,0,0.08);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
     }
 
-    /* Status Badges */
-    .j-badge {
-        display: inline-flex;
-        align-items: center;
+    /* Badge */
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 100px;
         font-size: 10px;
         font-weight: 800;
-        padding: 5px 14px;
-        border-radius: 20px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 12px;
-    }
-    .j-badge-aktif { background: #e0f2fe; color: #0369a1; }
-    .j-badge-telat { background: #fee2e2; color: #dc2626; }
-    .j-badge-pending { background: #fef3c7; color: #b45309; }
-    .j-badge-selesai { background: #f1f5f9; color: #64748b; }
-
-    /* Meta Info (Grid) */
-    .j-meta-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin-top: 20px;
-        padding-top: 15px;
-        border-top: 1px solid #f1f5f9;
-    }
-    .j-meta-item label {
-        display: block;
-        font-size: 9px;
-        font-weight: 700;
-        color: #94a3b8;
-        text-transform: uppercase;
-        margin-bottom: 2px;
-    }
-    .j-meta-item p {
-        font-size: 13px;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0;
-    }
-
-    .j-btn-detail {
-        margin-top: 15px;
-        font-size: 13px;
-        font-weight: 700;
-        color: #2563eb;
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 5px;
-        transition: 0.3s;
+        gap: 6px;
     }
-    .j-card:hover .j-btn-detail {
-        gap: 10px;
-    }
+    .badge-pending { background: #fef3c7; color: #b45309; }
+    .badge-active { background: #dcfce7; color: #15803d; }
+    .badge-late { background: #fee2e2; color: #b91c1c; }
+    .badge-process { background: #e0f2fe; color: #0369a1; }
+    .badge-done { background: #f1f5f9; color: #64748b; }
 
-    .empty-state {
-        text-align: center;
-        padding: 80px 20px;
-        color: #94a3b8;
+    .meta-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+    .meta-item span { display: block; font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+    .meta-item strong { font-size: 13px; color: #0f172a; }
+    
+    /* Buttons */
+    .btn-group-custom { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-action {
+        flex: 1; padding: 10px; border-radius: 14px; font-weight: 800; font-size: 12px;
+        border: none; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        text-decoration: none !important;
     }
+    .btn-return { background: var(--primary); color: white !important; }
+    .btn-denda { background: var(--danger); color: white !important; }
+    .btn-detail { background: #f1f5f9; color: #475569 !important; border: 1px solid #e2e8f0; }
+
+    /* Modal Styling - Memastikan Modal Tersembunyi */
+    .modal { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+    .modal-content { border-radius: 32px; border: none; overflow: hidden; }
 </style>
 
 <div class="content-wrapper">
     <div class="container">
-        
-        <div class="header-info">
-            <h2>Peminjaman Saya</h2>
-            <p class="text-muted">Semua riwayat peminjaman buku dalam satu halaman.</p>
+        <div class="header-section mb-5">
+            <h2 class="fw-bold">📑 Peminjaman Saya</h2>
+            <p class="text-muted">Pantau status buku dan kelola pengembalian tepat waktu.</p>
         </div>
 
-        <div class="row g-4">
+        <div class="row">
             @forelse($peminjaman as $p)
-                <div class="col-xl-6">
-                    <a href="{{ route('peminjaman.detail', $p->id) }}" class="j-card">
-                        <div class="d-flex align-items-start gap-4">
-                            <div class="j-cover-wrapper">
-                                @php
-                                    $cover = $p->buku->cover 
-                                            ? (Str::startsWith($p->buku->cover, 'cover-img') ? asset($p->buku->cover) : asset('storage/' . $p->buku->cover)) 
-                                            : 'https://ui-avatars.com/api/?name='.urlencode($p->buku->judul).'&background=f1f5f9&color=64748b';
-                                @endphp
-                                <img src="{{ $cover }}" class="j-cover" alt="Book Cover">
-                            </div>
+                @php
+                    $isLate = $p->status == 'pinjam' && now()->gt($p->tgl_kembali);
+                    $cover = $p->buku->cover 
+                        ? (Str::startsWith($p->buku->cover, 'cover-img') ? asset($p->buku->cover) : asset('storage/'.$p->buku->cover)) 
+                        : 'https://placeholder.com';
+                @endphp
 
+                <div class="col-lg-6">
+                    <div class="loan-card">
+                        <div class="d-flex gap-4 align-items-center">
+                            <img src="{{ $cover }}" class="book-cover" alt="Cover">
+                            
                             <div class="flex-grow-1">
-                                @php
-                                    $isLate = $p->status == 'pinjam' && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($p->tgl_kembali));
-                                @endphp
-
-                                <div class="d-flex justify-content-between align-items-start">
-                                    @if($p->status == 'dikembalikan')
-                                        <span class="j-badge j-badge-selesai">Selesai</span>
-                                    @elseif($isLate)
-                                        <span class="j-badge j-badge-telat">Terlambat</span>
-                                    @elseif($p->status == 'pending')
-                                        <span class="j-badge j-badge-pending">Menunggu Verifikasi</span>
-                                    @else
-                                        <span class="j-badge j-badge-aktif">Aktif</span>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    @if($p->status == 'dikembalikan') 
+                                        <span class="status-badge badge-done">Selesai</span>
+                                    @elseif($p->status == 'proses_kembali') 
+                                        <span class="status-badge badge-process">Verifikasi Admin</span>
+                                    @elseif($p->status_denda == 'belum_bayar' || $isLate) 
+                                        <span class="status-badge badge-late">Terlambat</span>
+                                    @elseif($p->status == 'pending') 
+                                        <span class="status-badge badge-pending">Menunggu Persetujuan</span>
+                                    @else 
+                                        <span class="status-badge badge-active">Aktif</span>
                                     @endif
-                                    <span class="text-muted small">#{{ $p->id }}</span>
+                                    <small class="text-muted fw-bold">#{{ $p->id }}</small>
                                 </div>
 
-                                <h5 class="fw-bold mb-1 text-dark" style="line-height: 1.4;">{{ Str::limit($p->buku->judul, 55) }}</h5>
+                                <h5 class="fw-bold mb-1 text-dark">{{ Str::limit($p->buku->judul, 35) }}</h5>
                                 
-                                <div class="j-meta-grid">
-                                    <div class="j-meta-item">
-                                        <label>Tanggal Pinjam</label>
-                                        <p>{{ $p->tgl_pinjam ? \Carbon\Carbon::parse($p->tgl_pinjam)->format('d M Y') : '-' }}</p>
+                                <div class="meta-info">
+                                    <div class="meta-item">
+                                        <span>Batas Kembali</span>
+                                        <strong class="{{ $isLate ? 'text-danger' : '' }}">
+                                            {{ \Carbon\Carbon::parse($p->tgl_kembali)->format('d M Y') }}
+                                        </strong>
                                     </div>
-                                    <div class="j-meta-item">
-                                        <label>{{ $p->status == 'dikembalikan' ? 'Sudah Kembali' : 'Batas Waktu' }}</label>
-                                        <p class="{{ $isLate ? 'text-danger' : 'text-primary' }}">
-                                            {{ $p->tgl_kembali ? \Carbon\Carbon::parse($p->tgl_kembali)->format('d M Y') : '-' }}
-                                        </p>
+                                    <div class="meta-item">
+                                        <span>Total Denda</span>
+                                        <strong class="{{ $p->total_denda > 0 ? 'text-danger' : '' }}">
+                                            Rp {{ number_format($p->total_denda) }}
+                                        </strong>
                                     </div>
                                 </div>
 
-                                <div class="j-btn-detail">
-                                    Lihat Detail Transaksi <i class="bi bi-arrow-right"></i>
+                                <div class="btn-group-custom">
+                                    <a href="{{ route('buku.detail', $p->buku->id) }}" class="btn-action btn-detail">Detail</a>
+
+                                    {{-- Hanya muncul jika status 'pinjam' dan belum dihitung denda --}}
+                                    @if($p->status == 'pinjam' && $p->status_denda == 'no_denda')
+                                        <form action="{{ route('peminjaman.proses_kembali', $p->id) }}" method="POST" class="flex-grow-1">
+                                            @csrf
+                                            <button type="submit" class="btn-action btn-return w-100">
+                                                {{ $isLate ? 'Cek Denda' : 'Kembalikan' }}
+                                            </button>
+                                        </form>
+
+                                    {{-- Modal Bayar hanya muncul jika status denda sudah 'belum_bayar' --}}
+                                    @elseif($p->status_denda == 'belum_bayar')
+                                        <button type="button" class="btn-action btn-denda flex-grow-1" data-bs-toggle="modal" data-bs-target="#modalFine{{$p->id}}">
+                                            <i class="fas fa-upload"></i> Bayar Denda
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         </div>
-                    </a>
-                </div>
-            @empty
-                <div class="col-12">
-                    <div class="empty-state">
-                        <i class="bi bi-inboxes mb-3 d-block" style="font-size: 40px;"></i>
-                        <p>Belum ada data transaksi peminjaman.</p>
                     </div>
+                </div>
+
+                {{-- MODAL UPLOAD (Ditempatkan di dalam loop tapi di luar loan-card) --}}
+                @if($p->status_denda == 'belum_bayar')
+                <div class="modal fade" id="modalFine{{$p->id}}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content shadow-lg">
+                            <form action="{{ route('peminjaman.bayar_denda', $p->id) }}" method="POST" enctype="multipart/form-data">
+                                @csrf
+                                <div class="modal-body p-4 text-center">
+                                    <h4 class="fw-bold mb-3">Pembayaran Denda</h4>
+                                    <div class="alert alert-danger rounded-4 py-3 mb-4">
+                                        <span class="d-block small fw-bold">TOTAL TAGIHAN</span>
+                                        <h2 class="fw-bold mb-0 text-danger">Rp {{ number_format($p->total_denda) }}</h2>
+                                    </div>
+                                    <p class="small text-muted mb-4">Transfer ke <b>BCA 12345678 a/n Perpus Ginx</b></p>
+                                    
+                                    <div class="mb-4">
+                                        <input type="file" name="bukti" class="form-control rounded-3" required>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-4 fw-bold">Konfirmasi Bayar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+            @empty
+                <div class="col-12 text-center py-5">
+                    <h5 class="text-muted fw-bold">Belum ada riwayat peminjaman.</h5>
                 </div>
             @endforelse
         </div>
-
     </div>
 </div>
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 @endsection
