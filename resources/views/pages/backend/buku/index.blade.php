@@ -1,11 +1,7 @@
 @extends('layout.backend.app')
 
-@section('conten')
+@section('content')
 <div class="content">
-    <div class="page-title" style="display: flex; align-items: center; gap: 10px;">
-        <i class="fas fa-book" style="color: #7c3aff;"></i>
-        <span>Manajemen Koleksi Buku</span>
-    </div>
 
     <div class="table-card">
         <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 20px;">
@@ -51,7 +47,9 @@
                             
                             <td style="text-align: center; padding: 10px 0;">
                                 @if($buku->cover)
-                                    <img src="{{ asset('storage/' . $buku->cover) }}" style="width: 40px; height: 55px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.08);">
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($buku->cover) }}" 
+                                         style="width: 45px; height: 60px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);" 
+                                         onerror="this.onerror=null;this.src='https://placehold.co/45x60?text=No+Cover';">
                                 @else
                                     <div style="width: 40px; height: 55px; background: #f1f5f9; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #cbd5e1; border: 1px dashed #cbd5e1; margin: 0 auto;">
                                         <i class="fas fa-book" style="font-size: 14px;"></i>
@@ -107,8 +105,7 @@
             </table>
         </div>
 
-        <<div class="pagination-row" style="display: flex; align-items: center; justify-content: space-between; margin-top: 25px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
-            
+        <div class="pagination-row" style="display: flex; align-items: center; justify-content: space-between; margin-top: 25px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
             <div style="font-size: 12px; color: #64748b;">
                 Showing <span style="font-weight: 600; color: #1e1b3a;">{{ $bukus->firstItem() ?? 0 }}</span> to <span style="font-weight: 600; color: #1e1b3a;">{{ $bukus->lastItem() ?? 0 }}</span> of {{ $bukus->total() }} entries
             </div>
@@ -116,15 +113,12 @@
             <div class="custom-pagination">
                 @if ($bukus->hasPages())
                     <ul style="display: flex; list-style: none; gap: 6px; padding: 0; margin: 0; align-items: center;">
-                        
-                        {{-- Tombol Previous --}}
                         @if ($bukus->onFirstPage())
                             <li class="page-item-disabled"><i class="fas fa-chevron-left"></i></li>
                         @else
                             <li><a href="{{ $bukus->previousPageUrl() }}" class="page-link-custom"><i class="fas fa-chevron-left"></i></a></li>
                         @endif
 
-                        {{-- Nomor Halaman (Hanya muncul 3 halaman sekitar yang aktif biar gak penuh) --}}
                         @foreach ($bukus->getUrlRange(max(1, $bukus->currentPage() - 1), min($bukus->lastPage(), $bukus->currentPage() + 1)) as $page => $url)
                             <li>
                                 <a href="{{ $url }}" class="page-link-custom {{ $page == $bukus->currentPage() ? 'active' : '' }}">
@@ -133,23 +127,19 @@
                             </li>
                         @endforeach
 
-                        {{-- Tombol Next --}}
                         @if ($bukus->hasMorePages())
                             <li><a href="{{ $bukus->nextPageUrl() }}" class="page-link-custom"><i class="fas fa-chevron-right"></i></a></li>
                         @else
                             <li class="page-item-disabled"><i class="fas fa-chevron-right"></i></li>
                         @endif
-
                     </ul>
                 @endif
             </div>
         </div>
     </div>
 </div>
-</div>
 
 <style>
-    /* Styling Pagination biar lurus & gak ngebug */
     .page-link-custom {
         display: flex;
         align-items: center;
@@ -193,7 +183,6 @@
         cursor: not-allowed;
     }
 
-    /* Memastikan tabel gak tembus pandang */
     .table-card {
         background: #fff;
         border-radius: 14px;
@@ -202,5 +191,3 @@
     }
 </style>
 @endsection
-
-<

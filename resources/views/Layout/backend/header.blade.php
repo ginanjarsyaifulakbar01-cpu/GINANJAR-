@@ -1,9 +1,28 @@
-<header class="topbar" style="display: flex; justify-content: flex-end; align-items: center; padding: 10px 30px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+<header class="topbar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 30px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
     
+    {{-- Sisi Kiri: Judul Halaman Dinamis --}}
+    <div class="topbar-left">
+        <h5 style="margin: 0; font-weight: 800; color: #1e1b3a; letter-spacing: -0.5px;">
+    @if(Request::is('admin/dashboard*'))
+        Dashboard
+    @elseif(Request::is('admin/user*'))
+        Manajemen User
+    @elseif(Request::is('admin/peminjaman*'))
+        Log Transaksi
+    @elseif(Request::is('admin/buku*'))
+        Data Buku
+    @elseif(Request::is('admin/categories*'))
+        Kategori Buku
+    @else
+        Perpustakaan Digital
+    @endif
+</h5>
+        <span style="font-size: 11px; color: #94a3b8;">Sistem Perpustakaan Digital</span>
+    </div>
+
     <div class="topbar-right">
         <div style="display: flex; align-items: center;">
-            {{-- Klik Area: Profil BE (Admin Profile) --}}
-            <div class="topbar-user" onclick="window.location.href='{{ route('admin.profile') }}'" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 6px 15px; border-radius: 12px; transition: 0.3s;" onmouseover="this.style.background='#f0eeff'">
+            <div class="topbar-user" onclick="window.location.href='{{ route('admin.profile') }}'" style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 6px 15px; border-radius: 12px; transition: 0.3s;" onmouseover="this.style.background='#f0eeff'" onmouseout="this.style.background='transparent'">
                 
                 @if(Auth::user()->img)
                     <img src="{{ asset('storage/' . Auth::user()->img) }}" alt="Profile" class="user-avatar" style="object-fit: cover; width: 38px; height: 38px; border-radius: 50%; border: 2px solid #7c3aff;">

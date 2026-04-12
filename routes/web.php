@@ -15,51 +15,57 @@ use App\Http\Controllers\backend\PeminjamanController;
 |--------------------------------------------------------------------------
 */
 
-// --- PUBLIC ROUTES (Landing Page) ---
+// --- 1. PUBLIC & GUEST ---
 Route::get('/', [FrontendController::class, 'landing'])->name('landing');
 
-// --- GUEST ROUTES (Hanya bisa diakses kalau BELUM login) ---
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () { return view('auth.login'); })->name('login');
     Route::post('/login', [LoginController::class, 'login']);
 });
 
-// --- AUTH SHARED ROUTES (Semua User Login) ---
+// --- 2. AUTHENTICATED ROUTES (Semua User yang Login) ---
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-});
 
-// --- BACKEND ROUTES (Role: Admin & Petugas) ---
-Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'role:admin,petugas']], function () {
-    
-    // 1. Dashboard & Profile
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/profile', function () { return view('pages.backend.profile'); })->name('admin.profile');
-    
-    // 2. MODUL PEMINJAMAN (Sisi Admin - Approval & Monitoring)
-    Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
-    Route::post('/peminjaman/{id}/approve', [PeminjamanController::class, 'approve'])->name('peminjaman.approve');
-    Route::post('/peminjaman/{id}/reject', [PeminjamanController::class, 'reject'])->name('peminjaman.reject');
-    Route::post('/peminjaman/{id}/kembali', [PeminjamanController::class, 'kembalikan'])->name('peminjaman.kembali');
-
-    // 3. MASTER DATA (CRUD Buku, Kategori, & User)
-    Route::resource('buku', BukuController::class);
-    Route::resource('categories', CategoryController::class);
-    Route::resource('user', UserBackendController::class)->middleware('role:admin');
-});
-
-// --- FRONTEND ROUTES (Role: Anggota / User Biasa) ---
-Route::middleware('auth')->group(function () {
-    
-    // 1. Navigasi Halaman User
+    // --- FRONTEND ROUTES (User/Anggota) ---
     Route::get('/home', [FrontendController::class, 'index'])->name('home'); 
     Route::get('/katalog', [FrontendController::class, 'katalog'])->name('katalog');
+    Route::get('/buku/{id}', [FrontendController::class, 'detail'])->name('buku.detail');
     Route::get('/profile', function () { return view('pages.frontend.profile'); })->name('profile');
     
-    // 2. RIWAYAT PEMINJAMAN (Halaman yang barusan kita buat)
+    // Alur Peminjaman User
     Route::get('/riwayat-pinjam', [FrontendController::class, 'riwayatPinjam'])->name('riwayat.pinjam');
+    Route::post('/buku/{id}/pinjam', [FrontendController::class, 'pinjam'])->name('buku.pinjam');
+    Route::get('/peminjaman/detail/{id}', [FrontendController::class, 'detailPeminjaman'])->name('peminjaman.detail'); 
     
-    // 3. Detail & Aksi Pinjam Buku
-    Route::get('/buku/{id}', [FrontendController::class, 'show'])->name('buku.detail');
-    Route::post('/buku/{id}/pinjam', [FrontendController::class, 'pinjamBuku'])->name('buku.pinjam');
+    // Alur Pengembalian & Denda (Logic ada di PeminjamanController)
+    Route::post('/peminjaman/{id}/proses-kembali', [PeminjamanController::class, 'prosesKembalikan'])->name('peminjaman.proses_kembali');
+    Route::post('/peminjaman/{id}/bayar-denda', [PeminjamanController::class, 'bayarDenda'])->name('peminjaman.bayar_denda');
+
+
+    // --- 3. BACKEND ROUTES (Admin & Petugas) ---
+    Route::group(['prefix' => 'admin', 'middleware' => ['role:admin,petugas']], function () {
+        
+        // Dashboard & Profile Admin
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/profile-admin', function () { return view('pages.backend.profile'); })->name('admin.profile');
+        
+        // MODUL PEMINJAMAN (Manajemen Transaksi)
+        Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
+        
+        /**
+         * ACTION VERIFIKASI:
+         * review -> Approve pinjam awal (dari status 'pending' ke 'pinjam')
+         * review_kembali -> Approve pengembalian (dari 'proses_kembali' ke 'dikembalikan')
+         */
+        Route::post('/peminjaman/{id}/review', [PeminjamanController::class, 'review'])->name('peminjaman.review');
+        Route::post('/peminjaman/{id}/review-kembali', [PeminjamanController::class, 'review_kembali'])->name('peminjaman.review_kembali');
+
+        // MASTER DATA
+        Route::resource('buku', BukuController::class);
+        Route::resource('categories', CategoryController::class);
+        
+        // Kelola User hanya bisa diakses oleh Admin
+        Route::resource('user', UserBackendController::class)->middleware('role:admin');
+    });
 });

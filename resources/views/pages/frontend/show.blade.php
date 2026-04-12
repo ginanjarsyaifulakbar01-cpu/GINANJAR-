@@ -101,7 +101,27 @@
         font-size: 16px;
     }
 
-    /* --- RELATED BOOKS --- */
+    /* --- FORM BOX --- */
+    .form-peminjaman-box {
+        background: #f8fafc;
+        padding: 25px;
+        border-radius: 24px;
+        border: 2px dashed #e2e8f0;
+        margin-bottom: 20px;
+    }
+
+    .input-custom {
+        width: 100%;
+        padding: 12px 15px;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        font-weight: 700;
+        margin-top: 8px;
+        outline: none;
+        transition: 0.3s;
+    }
+    .input-custom:focus { border-color: #2563eb; box-shadow: 0 0 0 4px #dbeafe; }
+
     .related-section { margin-top: 60px; }
     .related-title { font-weight: 800; font-size: 24px; margin-bottom: 25px; }
 
@@ -143,7 +163,6 @@
         </div>
 
         <div class="detail-content">
-            {{-- Tambahkan Notifikasi di Sini --}}
             @if(session('success'))
                 <div style="background: #d1fae5; color: #065f46; padding: 15px; border-radius: 15px; margin-bottom: 20px; font-weight: 700; border: 1px solid #10b981;">
                     <i class="fas fa-check-circle"></i> {{ session('success') }}
@@ -183,17 +202,39 @@
                 <p>{{ $buku->deskripsi ?? 'Tidak ada deskripsi untuk buku ini.' }}</p>
             </div>
 
-            {{-- LOGIKA TOMBOL PINJAM --}}
             @if($buku->stok > 0)
                 <form action="{{ route('buku.pinjam', $buku->id) }}" method="POST">
                     @csrf
+                    <div class="form-peminjaman-box">
+                        <div style="margin-bottom: 20px;">
+                            <label class="info-label" style="color: #0f172a; font-size: 15px;">
+                                <i class="fas fa-calendar-day text-primary" style="margin-right: 5px;"></i> Rencana Tanggal Pinjam
+                            </label>
+                            <input type="date" name="tgl_pinjam" class="input-custom" 
+                                   value="{{ date('Y-m-d') }}" required>
+                        </div>
+
+                        <div>
+                            <label class="info-label" style="color: #0f172a; font-size: 15px;">
+                                <i class="fas fa-hourglass-half text-primary" style="margin-right: 5px;"></i> Durasi Peminjaman
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-top: 5px;">
+                                <div style="flex: 1;">
+                                    <input type="number" name="durasi" class="input-custom" value="7" min="7" required>
+                                </div>
+                                <div style="font-weight: 800; color: #64748b; padding-top: 8px;">Hari</div>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 11px; color: #2563eb; margin-top: 15px; font-weight: 700; margin-bottom: 0;">
+                            *Mode Testing: Tanggal bisa diatur ke masa lalu untuk simulasi denda.
+                        </p>
+                    </div>
+
                     <button type="submit" style="width: 100%; padding: 18px; border-radius: 18px; border: none; background: #2563eb; color: white; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);">
                         <i class="fas fa-paper-plane" style="margin-right: 10px;"></i> Ajukan Peminjaman Sekarang
                     </button>
                 </form>
-                <p style="text-align: center; font-size: 12px; color: #64748b; margin-top: 12px; font-weight: 600;">
-                    *Permintaan akan diproses dan disetujui oleh petugas perpustakaan.
-                </p>
             @else
                 <button disabled style="width: 100%; padding: 18px; border-radius: 18px; border: none; background: #94a3b8; color: white; font-weight: 800; font-size: 16px; cursor: not-allowed;">
                     <i class="fas fa-times-circle" style="margin-right: 10px;"></i> Stok Habis

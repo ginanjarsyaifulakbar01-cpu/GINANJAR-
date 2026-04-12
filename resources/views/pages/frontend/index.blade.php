@@ -178,7 +178,8 @@
         <p>Jelajahi ribuan koleksi buku terbaik yang tersedia di perpustakaan kami.</p>
         
         <div class="search-wrapper">
-            <form action="{{ route('home') }}" method="GET" class="search-bar">
+            {{-- PERUBAHAN DISINI: Action diarahkan ke route katalog --}}
+            <form action="{{ route('katalog') }}" method="GET" class="search-bar">
                 <input type="text" name="search" placeholder="Cari judul buku, penulis, atau kategori..." value="{{ request('search') }}">
                 <button type="submit">Cari Buku</button>
             </form>
@@ -188,51 +189,45 @@
 
 <div class="container catalog-container">
     <div class="section-title">
-        <h2>Koleksi Buku</h2>
-        <div style="background: white; padding: 8px 16px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 14px; font-weight: 700;">
-            <span style="color: #64748b;">Total:</span> {{ $bukus->count() }} Judul
-        </div>
+        <h2>Buku Populer</h2>
+        <a href="{{ route('katalog') }}" style="color: #2563eb; font-weight: 700; text-decoration: none;">Lihat Semua →</a>
     </div>
 
     <div class="grid-buku">
         @forelse($bukus as $buku)
-       <div class="card-buku">
-    <div class="cover-wrapper">
-        <span class="category-badge">{{ $buku->category->name ?? 'Umum' }}</span>
-        
-        {{-- LOGIKA DETEKSI PATH FOTO --}}
-        @php
-            $imagePath = 'https://via.placeholder.com/300x400?text=No+Cover';
-            if ($buku->cover) {
-                if (Str::startsWith($buku->cover, 'cover-img')) {
-                    $imagePath = asset($buku->cover);
-                } else {
-                    $imagePath = asset('storage/' . $buku->cover);
-                }
-            }
-        @endphp
+        {{-- Bungkus dengan link detail agar bisa diklik --}}
+        <a href="{{ route('buku.detail', $buku->id) }}" class="card-link">
+            <div class="card-buku">
+                <div class="cover-wrapper">
+                    <span class="category-badge">{{ $buku->category->name ?? 'Umum' }}</span>
+                    
+                    @php
+                        $imagePath = 'https://via.placeholder.com/300x400?text=No+Cover';
+                        if ($buku->cover) {
+                            $imagePath = Str::startsWith($buku->cover, 'cover-img') 
+                                         ? asset($buku->cover) 
+                                         : asset('storage/' . $buku->cover);
+                        }
+                    @endphp
 
-        <img src="{{ $imagePath }}" 
-             class="img-cover" 
-             alt="{{ $buku->judul }}"
-             onerror="this.onerror=null;this.src='https://via.placeholder.com/300x400?text=Path+Salah';">
-    </div>
-    
-    <h4>{{ Str::limit($buku->judul, 45) }}</h4>
-    
-    <div class="card-meta">
-        <div class="stok-status" style="color: {{ $buku->stok > 0 ? '#10b981' : '#ef4444' }}">
-            <i class="fas {{ $buku->stok > 0 ? 'fa-check-double' : 'fa-times-circle' }}"></i>
-            {{ $buku->stok > 0 ? 'Tersedia ' . $buku->stok : 'Stok Habis' }}
-        </div>
-    </div>
-</div>
+                    <img src="{{ $imagePath }}" class="img-cover" alt="{{ $buku->judul }}"
+                         onerror="this.onerror=null;this.src='https://via.placeholder.com/300x400?text=Path+Salah';">
+                </div>
+                
+                <h4>{{ Str::limit($buku->judul, 45) }}</h4>
+                
+                <div class="card-meta">
+                    <div class="stok-status" style="color: {{ $buku->stok > 0 ? '#10b981' : '#ef4444' }}">
+                        <i class="fas {{ $buku->stok > 0 ? 'fa-check-double' : 'fa-times-circle' }}"></i>
+                        {{ $buku->stok > 0 ? 'Tersedia ' . $buku->stok : 'Stok Habis' }}
+                    </div>
+                </div>
+            </div>
+        </a>
         @empty
         <div style="grid-column: 1/-1; text-align: center; padding: 100px 0; background: white; border-radius: 30px; border: 2px dashed #e2e8f0;">
-            <img src="https://illustrations.popsy.co/gray/falling.svg" style="width: 200px; margin-bottom: 20px;">
-            <h3 style="color: #1e293b; font-weight: 800;">Buku Tidak Ditemukan</h3>
-            <p style="color: #64748b;">Maaf bro, koleksi yang ente cari belum tersedia di rak kami.</p>
-            <a href="{{ route('home') }}" style="color: #2563eb; font-weight: 700; text-decoration: none; display: inline-block; margin-top: 15px;">Tampilkan Semua Buku</a>
+            <h3 style="color: #1e293b; font-weight: 800;">Belum Ada Koleksi</h3>
+            <p style="color: #64748b;">Nantikan koleksi buku terbaru kami segera!</p>
         </div>
         @endforelse
     </div>

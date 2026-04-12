@@ -7,51 +7,56 @@
             </a>
 
             <ul class="nav-links">
-    @auth
-        <li><a href="{{ route('home') }}">Beranda</a></li>
-        <li><a href="{{ route('katalog') }}">Katalog</a></li>
-        {{-- Tambah Link Riwayat di Navigasi Utama --}}
-        <li><a href="{{ route('riwayat.pinjam') }}">Riwayat Pinjam</a></li>
-        
-        {{-- Shortcut ke Admin Panel kalau dia Admin/Petugas --}}
-        @if(Auth::user()->role == 'admin' || Auth::user()->role == 'petugas')
-            <li><a href="{{ route('admin.dashboard') }}" class="admin-link">Panel Admin</a></li>
-        @endif
-    @endauth
+                @auth
+                    <li><a href="{{ route('home') }}">Beranda</a></li>
+                    <li><a href="{{ route('katalog') }}">Katalog</a></li>
+                    
+                    {{-- LINK RIWAYAT PINJAM DI NAVIGASI UTAMA --}}
+                    <li>
+                        <a href="{{ route('riwayat.pinjam') }}" class="d-flex align-items-center">
+                            Riwayat Pinjam
+                        </a>
+                    </li>
+                    
+                    @if(Auth::user()->role == 'admin' || Auth::user()->role == 'petugas')
+                        <li><a href="{{ route('admin.dashboard') }}" class="admin-link">Panel Admin</a></li>
+                    @endif
+                @endauth
 
-    @auth
-        <li class="profile-dropdown">
-            <a href="#" class="user-info-link"> {{-- Ubah route ke # biar gak keganti pas diklik --}}
-                <div class="user-info">
-                    <span class="user-name">{{ Auth::user()->name }}</span>
-                    <img src="{{ Auth::user()->avatar ? asset('storage/'.Auth::user()->avatar) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=2563eb&color=fff' }}" 
-                         alt="User">
-                </div>
-            </a>
-            
-            <div class="dropdown-content">
-                <a href="{{ route('profile') }}" class="dropdown-item">
-                    <i class="fas fa-user-circle"></i> Profil Saya
-                </a>
-                {{-- Tambah Link Riwayat di dalam Dropdown juga biar mantap --}}
-                <a href="{{ route('riwayat.pinjam') }}" class="dropdown-item">
-                    <i class="fas fa-history"></i> Riwayat Pinjam
-                </a>
+                @auth
+                    <li class="profile-dropdown">
+                        <a href="#" class="user-info-link">
+                            <div class="user-info">
+                                <span class="user-name">{{ Auth::user()->name }}</span>
+                                <img src="{{ Auth::user()->avatar ? asset('storage/'.Auth::user()->avatar) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=2563eb&color=fff' }}" 
+                                     alt="User">
+                            </div>
+                        </a>
+                        
+                        <div class="dropdown-content">
+                            <a href="{{ route('profile') }}" class="dropdown-item">
+                                <i class="fas fa-user-circle"></i> Profil Saya
+                            </a>
 
-                <hr style="margin: 0; border: 0.5px solid #f1f5f9;">
-                
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i> Keluar
-                    </button>
-                </form>
-            </div>
-        </li>
-    @else
-        <li><a href="{{ route('login') }}" class="btn-login">Masuk</a></li>
-    @endauth
-</ul>
+                            {{-- LINK RIWAYAT PINJAM DI DALAM DROPDOWN --}}
+                            <a href="{{ route('riwayat.pinjam') }}" class="dropdown-item">
+                                <i class="fas fa-history"></i> Status Pinjam
+                            </a>
+
+                            <hr style="margin: 0; border: 0.5px solid #f1f5f9;">
+                            
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="logout-btn">
+                                    <i class="fas fa-sign-out-alt"></i> Keluar
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                @else
+                    <li><a href="{{ route('login') }}" class="btn-login">Masuk</a></li>
+                @endauth
+            </ul>
         </div>
     </div>
 </nav>
@@ -72,6 +77,19 @@
         list-style: none;
         margin: 0;
         padding: 0;
+    }
+
+    /* Style untuk link teks biasa agar konsisten */
+    .nav-links li a {
+        text-decoration: none;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .nav-links li a:hover {
+        color: #2563eb;
     }
 
     /* Profile Style Slim */
@@ -119,7 +137,7 @@
         right: 0;
         top: 100%;
         background-color: white;
-        min-width: 150px;
+        min-width: 180px; /* Lebarkan sedikit agar teks tidak kepotong */
         box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         border-radius: 12px;
         overflow: hidden;
@@ -131,7 +149,6 @@
         display: block;
     }
 
-    /* Item di dalam dropdown */
     .dropdown-item {
         display: flex;
         align-items: center;

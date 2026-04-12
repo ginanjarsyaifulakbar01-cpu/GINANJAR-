@@ -1,11 +1,7 @@
 @extends('layout.backend.app')
 
-@section('conten')
+@section('content')
 <div class="content">
-    <div class="page-title" style="display: flex; align-items: center; gap: 10px;">
-        <i class="fas fa-tags" style="color: #7c3aff;"></i>
-        <span>Manajemen Kategori Buku</span>
-    </div>
 
     <div class="table-card">
         <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 20px;">

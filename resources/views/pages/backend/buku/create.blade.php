@@ -171,7 +171,7 @@
   }
 </style>
 
-@section('conten')
+@section('content')
 <div class="form-wrapper">
 
   <div class="page-title">Halaman Tambah Buku</div>

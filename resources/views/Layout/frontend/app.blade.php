@@ -33,6 +33,18 @@
 
         @media (max-width: 768px) { .nav-links { display: none; } }
     </style>
+
+    @if(session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
     @yield('style')
 </head>
 <body>

@@ -1,9 +1,7 @@
 @extends('layout.backend.app')
 
-@section('conten')
+@section('content')
   <div class="content">
-    <div class="page-title">Dashboard</div>
-
     <div class="stat-cards">
       {{-- Card Anggota --}}
       <div class="stat-card orange">

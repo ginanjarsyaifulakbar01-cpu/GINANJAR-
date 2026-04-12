@@ -5,7 +5,7 @@ namespace App\Http\Controllers\frontend;
 use App\Http\Controllers\Controller;
 use App\Models\Buku;
 use App\Models\Category;
-use App\Models\Peminjaman; // Pastikan Model Peminjaman sudah dibuat
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -43,88 +43,96 @@ class FrontendController extends Controller
     public function katalog(Request $request)
     {
         $categories = Category::all();
-        $query = Buku::with('category');
+        $query = Buku::query()->with('category')->latest();
 
-        if ($request->has('search')) {
-            $query->where('judul', 'like', '%' . $request->search . '%')
-                  ->orWhere('penulis', 'like', '%' . $request->search . '%');
+        if ($request->filled('search')) {
+            $query->where('judul', 'like', '%' . $request->search . '%');
         }
 
-        $bukus = $query->latest()->get();
-        return view('pages.frontend.katalog', compact('bukus', 'categories'));
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        $bukus = $query->paginate(12);
+        return view('pages.frontend.katalog', compact('categories', 'bukus'));
     }
 
     /**
      * 4. Tampilan Detail Buku
      */
-    public function show($id)
+    public function detail($id)
     {
         $buku = Buku::with('category')->findOrFail($id);
-        
         $related_books = Buku::where('category_id', $buku->category_id)
-                             ->where('id', '!=', $id)
-                             ->take(4)
-                             ->get();
+            ->where('id', '!=', $id)
+            ->take(4)
+            ->get();
 
         return view('pages.frontend.show', compact('buku', 'related_books'));
     }
 
     /**
-     * 5. Fungsi Request Peminjaman (User Meminta Izin ke BE)
+     * 5. Proses Pengajuan Peminjaman
+     * MODE SIMULASI: Sinkron dengan Backend agar tanggal tidak berubah saat disetujui.
      */
-    public function pinjamBuku(Request $request, $id)
+    public function pinjam(Request $request, $id)
     {
-        // 1. Cek apakah user sudah login
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Ente harus login dulu buat pinjam buku!');
-        }
+        $request->validate([
+            'tgl_pinjam' => 'required|date',
+            'durasi'     => 'required|integer|min:7',
+        ], [
+            'durasi.min' => 'Durasi peminjaman minimal adalah 7 hari.'
+        ]);
 
         $buku = Buku::findOrFail($id);
 
-        // 2. Cek Stok Buku
         if ($buku->stok <= 0) {
-            return back()->with('error', 'Waduh, stok buku ini lagi kosong Ngab!');
+            return back()->with('error', 'Maaf, stok buku sedang habis.');
         }
 
-        // 3. Cek apakah user sedang meminjam atau sudah request buku yang sama & belum kelar
-        $cekPinjam = Peminjaman::where('user_id', Auth::id())
-                                ->where('buku_id', $id)
-                                ->whereIn('status', ['pending', 'disetujui'])
-                                ->first();
+        // Olah data tanggal
+        $tanggalMulai = Carbon::parse($request->tgl_pinjam);
+        $durasi = (int) $request->durasi;
 
-        if ($cekPinjam) {
-            return back()->with('error', 'Ente sudah mengajukan pinjaman untuk buku ini, tunggu diproses ya!');
-        }
-
-        // 4. Buat data peminjaman dengan status 'pending'
-        // Status ini yang nanti harus disetujui (Approve) oleh Petugas di Backend
-        Peminjaman::create([
-            'user_id'     => Auth::id(),
-            'buku_id'     => $id,
-            'tgl_request' => Carbon::now(),
-            'status'      => 'pending', // Kuncinya di sini, status awal harus pending
+        // Simpan Transaksi Peminjaman (Status tetap Pending)
+        $peminjaman = Peminjaman::create([
+            'user_id' => Auth::id(),
+            'buku_id' => $id,
+            'tgl_pinjam' => $tanggalMulai,
+            'tgl_kembali' => $tanggalMulai->copy()->addDays($durasi),
+            'status' => 'pending',
+            'status_denda' => 'no_denda'
         ]);
 
-        return back()->with('success', 'Request peminjaman berhasil dikirim! Silakan hubungi petugas untuk approval.');
+        // Catatan: Stok dikurangi di Backend saat Admin klik "Setuju", 
+        // agar tidak terjadi pengurangan stok palsu jika admin menolak pengajuan.
+
+        return redirect()->route('peminjaman.detail', $peminjaman->id)
+                         ->with('success', 'Peminjaman diajukan! Menunggu persetujuan admin.');
     }
+
+    /**
+     * 6. Tampilan Detail Peminjaman
+     */
+    public function detailPeminjaman($id)
+    {
+        $pinjam = Peminjaman::with(['buku', 'user'])
+            ->where('user_id', Auth::id())
+            ->findOrFail($id);
+
+        return view('pages.frontend.detail_peminjaman', compact('pinjam'));
+    }
+
+    /**
+     * 7. Riwayat Pinjam User
+     */
     public function riwayatPinjam()
-{
-    $userId = Auth::id();
-    
-    // Buku yang masih dibawa (Disetujui tapi belum balik)
-    $sedangDipinjam = Peminjaman::with('buku')
-        ->where('user_id', $userId)
-        ->where('status', 'disetujui')
-        ->get();
+    {
+        $peminjaman = Peminjaman::where('user_id', Auth::id())
+                                ->with('buku')
+                                ->latest()
+                                ->get();
 
-    // Semua riwayat lainnya (Selesai, Ditolak, Pending)
-    $riwayatLengkap = Peminjaman::with('buku')
-        ->where('user_id', $userId)
-        ->whereIn('status', ['dikembalikan', 'pending', 'ditolak'])
-        ->latest()
-        ->get();
-
-    return view('pages.frontend.riwayat_pinjam', compact('sedangDipinjam', 'riwayatLengkap'));
-}
-
+        return view('pages.frontend.peminjaman', compact('peminjaman'));
+    }
 }

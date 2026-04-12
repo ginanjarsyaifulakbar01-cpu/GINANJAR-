@@ -217,13 +217,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
-  @include('layout.backend.sidebar')
+  @include('Layout.backend.sidebar')
 
   <div class="main">
     @include('layout.backend.header')
 
     {{-- Tempat konten halaman lain muncul --}}
-    @yield('conten')
+    @yield('content')
   </div>
 
 </body>

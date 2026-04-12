@@ -1,139 +1,171 @@
 @extends('Layout.backend.app')
 
-@section('conten')
-<div class="container-fluid px-4">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4 mt-3">
-        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">
-            <i class="fas fa-book-reader text-primary mr-2"></i>Manajemen Peminjaman
-        </h1>
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb bg-transparent mb-0">
-                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Peminjaman</li>
-            </ol>
-        </nav>
-    </div>
+@section('content')
+<style>
+    .page-content { background: #f8fafc; border-radius: 15px; padding: 20px; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .table-modern { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    .table-modern th { font-size: 0.7rem; text-transform: uppercase; color: #94a3b8; padding: 0 20px 10px; }
+    .table-modern td { background: #fff; padding: 18px 20px; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .table-modern tr td:first-child { border-radius: 12px 0 0 12px; }
+    .table-modern tr td:last-child { border-radius: 0 12px 12px 0; }
+    
+    .badge-status { padding: 6px 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+    .pending { background: #fff7ed; color: #c2410c; }
+    .pinjam { background: #eef2ff; color: #4338ca; }
+    .review { background: #e0f2fe; color: #0369a1; }
+    .kembali { background: #ecfdf5; color: #15803d; }
 
-    <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px overflow: hidden;">
-        <div class="card-header bg-white py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="fas fa-list mr-1"></i> Antrean Request Buku
-            </h6>
-        </div>
-        <div class="card-body">
-            {{-- Alert Section --}}
-            @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                </div>
-            @endif
+    .btn-verif { background: #6366f1; color: white; border-radius: 10px; padding: 8px 16px; font-size: 0.8rem; font-weight: 700; border: none; transition: 0.3s; text-decoration: none; cursor: pointer; }
+    .btn-verif:hover { background: #4f46e5; transform: translateY(-2px); color: white; }
+    .modal-content { border-radius: 20px; border: none; }
+    .img-bukti { width: 100%; max-height: 250px; object-fit: contain; border-radius: 12px; border: 2px dashed #e2e8f0; }
+</style>
 
-            @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-triangle mr-2"></i> {{ session('error') }}
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
-                </div>
-            @endif
+@if(session('success'))
+    <div class="alert alert-success mx-3 rounded-4 border-0 shadow-sm">{{ session('success') }}</div>
+@endif
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle" width="100%" cellspacing="0">
-                    <thead class="bg-light">
-                        <tr class="text-secondary small font-weight-bold text-uppercase">
-                            <th class="border-0">Peminjam</th>
-                            <th class="border-0">Informasi Buku</th>
-                            <th class="border-0">Tgl Request</th>
-                            <th class="border-0">Status</th>
-                            <th class="border-0 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($peminjamans as $p)
-                        <tr>
-                            <td class="align-middle">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm mr-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
-                                        <i class="fas fa-user-alt small"></i>
-                                    </div>
-                                    <div>
-                                        <span class="font-weight-bold text-dark d-block">{{ $p->user->name ?? 'User Unknown' }}</span>
-                                        <small class="text-muted text-lowercase">{{ $p->user->email ?? '-' }}</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="align-middle">
-                                <span class="text-dark font-weight-500">{{ $p->buku->judul ?? 'Tanpa Judul' }}</span>
-                                <br><small class="badge badge-light border">ID: {{ $p->buku_id }}</small>
-                            </td>
-                            <td class="align-middle">
-                                <span class="text-secondary small">
-                                    <i class="far fa-calendar-alt mr-1"></i>
-                                    {{ $p->tgl_request ? \Carbon\Carbon::parse($p->tgl_request)->format('d/m/Y') : '-' }}
-                                </span>
-                            </td>
-                            <td class="align-middle">
-                                @php
-                                    $statusConfig = [
-                                        'pending' => ['bg' => 'warning', 'icon' => 'clock'],
-                                        'disetujui' => ['bg' => 'success', 'icon' => 'check-double'],
-                                        'ditolak' => ['bg' => 'danger', 'icon' => 'times-circle'],
-                                        'dikembalikan' => ['bg' => 'info', 'icon' => 'undo-alt']
-                                    ];
-                                    $conf = $statusConfig[$p->status] ?? ['bg' => 'secondary', 'icon' => 'info-circle'];
-                                @endphp
-                                <span class="badge badge-{{ $conf['bg'] }} px-3 py-2 shadow-xs" style="border-radius: 30px; font-weight: 500;">
-                                    <i class="fas fa-{{ $conf['icon'] }} mr-1"></i> {{ strtoupper($p->status) }}
-                                </span>
-                            </td>
-                            <td class="align-middle text-center">
-                                @if($p->status == 'pending')
-                                    <div class="d-flex justify-content-center">
-                                        <form action="{{ route('peminjaman.approve', $p->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-success shadow-sm mr-2 rounded-pill px-3" onclick="return confirm('Setujui peminjaman ini?')">
-                                                Approve
-                                            </button>
-                                        </form>
-                                        <form action="{{ route('peminjaman.reject', $p->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="return confirm('Tolak request ini?')">
-                                                Reject
-                                            </button>
-                                        </form>
-                                    </div>
-                                @elseif($p->status == 'disetujui')
-                                    <form action="{{ route('peminjaman.kembali', $p->id) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-primary shadow-sm rounded-pill px-4" onclick="return confirm('Konfirmasi pengembalian?')">
-                                            <i class="fas fa-sign-in-alt mr-1"></i> Kembalikan Buku
-                                        </button>
-                                    </form>
+<div class="page-content">
+    <div class="table-responsive" style="overflow: visible;">
+        <table class="table-modern">
+            <thead>
+                <tr>
+                    <th>Buku</th>
+                    <th>Peminjam</th>
+                    <th>Jadwal & Denda</th>
+                    <th>Status Pinjam</th>
+                    <th class="text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($data as $p)
+                <tr>
+                    <td>
+                        <div class="fw-bold text-dark">{{ $p->buku->judul }}</div>
+                        <small class="text-muted">ID: #TRX-{{ str_pad($p->id, 5, '0', STR_PAD_LEFT) }}</small>
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ $p->user->name }}</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">{{ $p->user->email }}</small>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.8rem;">
+                            <span class="text-muted">Batas:</span> 
+                            <span class="fw-bold text-dark">{{ $p->tgl_kembali ? \Carbon\Carbon::parse($p->tgl_kembali)->format('d/m/Y') : '-' }}</span>
+                            
+                            @php
+                                $tglKembali = \Carbon\Carbon::parse($p->tgl_kembali);
+                                $tglSekarang = \Carbon\Carbon::now();
+                                $dendaOtomatis = 0;
+                                
+                                // Jika status belum dikembalikan dan sudah lewat tanggal kembali
+                                if ($p->status != 'dikembalikan' && $tglSekarang->gt($tglKembali)) {
+                                    $hari = $tglSekarang->diffInDays($tglKembali);
+                                    $dendaOtomatis = $hari * 5000;
+                                }
+                                
+                                // Gunakan denda tertinggi antara hitungan sistem atau yang sudah tercatat di DB
+                                $totalDenda = max($dendaOtomatis, $p->total_denda);
+                            @endphp
+
+                            <div class="mt-1">
+                                @if($totalDenda > 0)
+                                    <span class="badge bg-danger" style="font-size: 0.65rem;">
+                                        Denda: Rp {{ number_format($totalDenda, 0, ',', '.') }}
+                                    </span>
                                 @else
-                                    <span class="text-muted font-italic small">No Action</span>
+                                    <small class="text-muted italic">Tanpa Denda</small>
                                 @endif
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <div class="empty-state">
-                                    <i class="fas fa-folder-open fa-3x text-light mb-3"></i>
-                                    <p class="text-secondary">Belum ada request peminjaman masuk pagi ini, Ngap!</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        @if($p->status == 'pending') <span class="badge-status pending">Menunggu Approval</span>
+                        @elseif($p->status == 'pinjam') <span class="badge-status pinjam">Aktif Dipinjam</span>
+                        @elseif($p->status == 'proses_kembali') <span class="badge-status review">Review Pengembalian</span>
+                        @elseif($p->status == 'dikembalikan') <span class="badge-status kembali">Selesai</span>
+                        @endif
+                    </td>
+                    <td class="text-center">
+                        {{-- STATUS PENDING --}}
+                        @if($p->status == 'pending')
+                            <div class="d-flex gap-2 justify-content-center">
+                                <form action="{{ route('peminjaman.review', $p->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" name="action" value="setuju" class="btn btn-sm btn-success rounded-3 px-3">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <form action="{{ route('peminjaman.review', $p->id) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" name="action" value="tolak" class="btn btn-sm btn-danger rounded-3 px-3">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                        {{-- STATUS PROSES KEMBALI --}}
+                        @elseif($p->status == 'proses_kembali')
+                            <button type="button" class="btn-verif" data-bs-toggle="modal" data-bs-target="#modalVerif{{ $p->id }}">
+                                <i class="bi bi-shield-check me-1"></i> Verif Kembali
+                            </button>
+
+                            <div class="modal fade" id="modalVerif{{ $p->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content shadow-lg text-start">
+                                        <form action="{{ route('peminjaman.review_kembali', $p->id) }}" method="POST">
+                                            @csrf
+                                            <div class="modal-body p-4">
+                                                <h5 class="fw-bold mb-3 text-center">Konfirmasi Pengembalian</h5>
+                                                <div class="p-3 bg-light rounded-4 mb-3">
+                                                    <small class="text-muted d-block text-start">Peminjam:</small>
+                                                    <span class="fw-bold d-block text-start">{{ $p->user->name }}</span>
+                                                    <small class="text-muted d-block mt-2 text-start">Buku:</small>
+                                                    <span class="fw-bold d-block text-start">{{ $p->buku->judul }}</span>
+                                                </div>
+
+                                                @if($totalDenda > 0)
+                                                    <div class="text-center mb-3">
+                                                        <small class="fw-bold d-block mb-2">Status Denda:</small>
+                                                        @if($p->bukti_bayar)
+                                                            <a href="{{ asset('storage/' . $p->bukti_bayar) }}" target="_blank">
+                                                                <img src="{{ asset('storage/' . $p->bukti_bayar) }}" class="img-bukti" alt="Bukti">
+                                                            </a>
+                                                            <span class="badge bg-success d-block mt-2">Bukti Pembayaran Tersedia</span>
+                                                        @else
+                                                            <div class="alert alert-warning py-2 mb-0" style="font-size: 0.8rem;">
+                                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> User belum upload bukti bayar denda.
+                                                            </div>
+                                                        @endif
+                                                        <span class="badge bg-danger d-block mt-2">Rp {{ number_format($totalDenda, 0, ',', '.') }}</span>
+                                                    </div>
+                                                @endif
+                                                <p class="text-center mt-3 mb-0">Apakah buku sudah diterima kembali dengan baik?</p>
+                                            </div>
+                                            <div class="modal-footer border-0 pb-4 justify-content-center">
+                                                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                                                <button type="submit" name="action" value="setuju" class="btn btn-success px-4 fw-bold shadow-sm">Selesaikan</button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                            </div>
+
+                        {{-- STATUS SELESAI --}}
+                        @elseif($p->status == 'dikembalikan')
+                            <span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Selesai</span>
+                        
+                        {{-- SEDANG DIPINJAM --}}
+                        @else
+                            <small class="text-muted italic">Menunggu Pengembalian</small>
+                        @endif
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="5" class="text-center py-5">Belum ada transaksi.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
-
-<style>
-    .font-weight-500 { font-weight: 500; }
-    .shadow-xs { box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important; }
-    .table thead th { border-top: none; }
-    .avatar-sm { font-size: 0.8rem; }
-</style>
 @endsection
