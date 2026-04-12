@@ -36,7 +36,7 @@
                         <th style="width: 150px; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Penulis</th>
                         <th style="width: 80px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Stok</th>
                         <th style="width: 100px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Status</th>
-                        <th style="width: 100px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Aksi</th>
+                        <th style="width: 120px; text-align: center; padding: 12px; color: #64748b; font-size: 11px; text-transform: uppercase;">Aksi</th>
                     </tr>
                 </thead>
 
@@ -47,7 +47,8 @@
                             
                             <td style="text-align: center; padding: 10px 0;">
                                 @if($buku->cover)
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($buku->cover) }}" 
+                                    {{-- Perbaikan: Menggunakan asset() karena path di DB adalah 'cover-img/...' --}}
+                                    <img src="{{ asset($buku->cover) }}" 
                                          style="width: 45px; height: 60px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);" 
                                          onerror="this.onerror=null;this.src='https://placehold.co/45x60?text=No+Cover';">
                                 @else
@@ -79,15 +80,22 @@
                             </td>
 
                             <td style="text-align: center;">
-                                <div style="display: flex; gap: 8px; justify-content: center;">
-                                    <a href="{{ route('buku.edit', $buku->id) }}" style="width: 30px; height: 30px; background: #eef2ff; color: #4338ca; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.2s;" onmouseover="this.style.background='#4338ca'; this.style.color='#fff'" onmouseout="this.style.background='#eef2ff'; this.style.color='#4338ca'">
-                                        <i class="fas fa-edit" style="font-size: 12px;"></i>
+                                <div style="display: flex; gap: 6px; justify-content: center;">
+                                    {{-- Tombol Detail --}}
+                                    <a href="{{ route('buku.show', $buku->id) }}" style="width: 28px; height: 28px; background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.2s;" title="Detail" onmouseover="this.style.background='#7c3aff'; this.style.color='#fff'" onmouseout="this.style.background='#f8fafc'; this.style.color='#64748b'">
+                                        <i class="fas fa-external-link-alt" style="font-size: 10px;"></i>
                                     </a>
 
+                                    {{-- Tombol Edit --}}
+                                    <a href="{{ route('buku.edit', $buku->id) }}" style="width: 28px; height: 28px; background: #eef2ff; color: #4338ca; border-radius: 6px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: 0.2s;" title="Edit" onmouseover="this.style.background='#4338ca'; this.style.color='#fff'" onmouseout="this.style.background='#eef2ff'; this.style.color='#4338ca'">
+                                        <i class="fas fa-edit" style="font-size: 10px;"></i>
+                                    </a>
+
+                                    {{-- Tombol Hapus --}}
                                     <form action="{{ route('buku.destroy', $buku->id) }}" method="POST" style="display:inline;">
                                         @csrf @method('DELETE')
-                                        <button onclick="return confirm('Yakin hapus data ini?')" style="width: 30px; height: 30px; background: #fff1f2; color: #e11d48; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#e11d48'; this.style.color='#fff'" onmouseout="this.style.background='#fff1f2'; this.style.color='#e11d48'">
-                                            <i class="fas fa-trash" style="font-size: 12px;"></i>
+                                        <button type="submit" onclick="return confirm('Yakin hapus data ini?')" style="width: 28px; height: 28px; background: #fff1f2; color: #e11d48; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" title="Hapus" onmouseover="this.style.background='#e11d48'; this.style.color='#fff'" onmouseout="this.style.background='#fff1f2'; this.style.color='#e11d48'">
+                                            <i class="fas fa-trash" style="font-size: 10px;"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -140,6 +148,7 @@
 </div>
 
 <style>
+    /* Style tetap sama seperti sebelumnya */
     .page-link-custom {
         display: flex;
         align-items: center;

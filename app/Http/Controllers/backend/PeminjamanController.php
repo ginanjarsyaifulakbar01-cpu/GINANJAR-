@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\backend; // Pastikan ini sesuai folder kamu
+namespace App\Http\Controllers\backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
@@ -14,7 +14,7 @@ use Carbon\Carbon;
 class PeminjamanController extends Controller
 {
     /**
-     * BACKEND: List Peminjaman
+     * BACKEND: List Semua Transaksi Peminjaman
      */
     public function index()
     {
@@ -23,7 +23,7 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * FRONTEND: Action Ajukan Pinjam
+     * FRONTEND: Member mengajukan peminjaman buku
      */
     public function ajukan(Request $request, $buku_id)
     {
@@ -59,7 +59,7 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * BACKEND: Review Peminjaman (Approve/Reject)
+     * BACKEND: Admin menyetujui atau menolak pengajuan pinjam baru
      */
     public function review(Request $request, $id)
     {
@@ -80,7 +80,7 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * FRONTEND: Proses Kembalikan (Cek Denda)
+     * FRONTEND: Member mengembalikan buku (Sistem cek keterlambatan & denda)
      */
     public function prosesKembalikan($id)
     {
@@ -88,6 +88,7 @@ class PeminjamanController extends Controller
         $tgl_sekarang = Carbon::now();
         $tgl_jatuh_tempo = Carbon::parse($p->tgl_kembali);
 
+        // Cek jika hari ini melewati tanggal kembali
         if ($tgl_sekarang->gt($tgl_jatuh_tempo)) {
             $selisih_hari = $tgl_sekarang->diffInDays($tgl_jatuh_tempo);
             $total_denda = $selisih_hari * 5000;
@@ -100,12 +101,13 @@ class PeminjamanController extends Controller
             return back()->with('error', '💸 Terlambat! Silakan bayar denda Rp ' . number_format($total_denda));
         }
 
+        // Jika tidak telat, langsung masuk proses verifikasi admin
         $p->update(['status' => 'proses_kembali']);
         return back()->with('success', '✅ Permintaan pengembalian terkirim.');
     }
 
     /**
-     * FRONTEND: Bayar Denda
+     * FRONTEND: Member upload bukti transfer denda
      */
     public function bayarDenda(Request $request, $id)
     {
@@ -113,7 +115,11 @@ class PeminjamanController extends Controller
         $p = Peminjaman::findOrFail($id);
 
         if ($request->hasFile('bukti')) {
-            if ($p->bukti_bayar) Storage::disk('public')->delete($p->bukti_bayar);
+            // Hapus bukti lama jika member re-upload sebelum diverifikasi
+            if ($p->bukti_bayar) {
+                Storage::disk('public')->delete($p->bukti_bayar);
+            }
+
             $path = $request->file('bukti')->store('bukti_bayar', 'public');
             
             $p->update([
@@ -128,25 +134,40 @@ class PeminjamanController extends Controller
     }
 
     /**
-     * BACKEND: Review Pengembalian & Denda
+     * BACKEND: Admin memverifikasi pengembalian buku & bukti denda
      */
     public function review_kembali(Request $request, $id)
     {
         $p = Peminjaman::findOrFail($id);
 
+        // JIKA ADMIN SETUJU
         if ($request->action == 'setuju') {
             $p->update([
                 'status' => 'dikembalikan',
                 'tgl_realisasi_kembali' => now(),
                 'status_denda' => ($p->total_denda > 0) ? 'lunas' : 'no_denda'
             ]);
+            
+            // Stok buku bertambah kembali
             $p->buku->increment('stok');
             return back()->with('success', '✅ Buku kembali & stok bertambah.');
         }
 
+        // JIKA ADMIN TOLAK BUKTI BAYAR
         if ($request->action == 'tolak_denda') {
-            $p->update(['status_denda' => 'belum_bayar', 'status' => 'pinjam']);
-            return back()->with('error', '❌ Bukti denda ditolak.');
+            // 1. Hapus file gambar dari folder storage agar tidak menumpuk sampah
+            if ($p->bukti_bayar) {
+                Storage::disk('public')->delete($p->bukti_bayar);
+            }
+
+            // 2. Set kolom bukti_bayar jadi NULL agar gambar hilang dari tabel dashboard
+            $p->update([
+                'status_denda' => 'belum_bayar', 
+                'status'       => 'pinjam',
+                'bukti_bayar'  => null 
+            ]);
+
+            return back()->with('error', '❌ Bukti denda ditolak & dihapus.');
         }
 
         return back()->with('error', 'Aksi tidak valid.');

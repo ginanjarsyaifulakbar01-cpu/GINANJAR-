@@ -5,17 +5,16 @@ namespace App\Http\Controllers\backend;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Buku;
-use App\Models\Category; // Wajib import Model Category!
+use App\Models\Category;
+use App\Models\Peminjaman; // Tambahkan import Model Peminjaman
 use Illuminate\Support\Facades\Storage;
 
 class BukuController extends Controller
 {
     public function index(Request $request)
     {
-        // Gunakan eager loading 'with' agar query lebih cepat saat manggil nama kategori
         $query = Buku::with('category'); 
 
-        // SEARCH
         if ($request->search) {
             $query->where('judul', 'like', '%' . $request->search . '%')
                 ->orWhere('penulis', 'like', '%' . $request->search . '%')
@@ -27,9 +26,26 @@ class BukuController extends Controller
         return view('pages.backend.buku.index', compact('bukus'));
     }
 
+    /**
+     * METHOD DETAIL BUKU (BE)
+     */
+    public function show($id)
+    {
+        // Ambil buku dengan kategori dan hitung jumlah peminjaman (biar selaras sama dashboard)
+        $buku = Buku::with(['category'])->withCount('peminjaman')->findOrFail($id);
+        
+        // Ambil 5 riwayat peminjaman terakhir khusus buku ini
+        $riwayat = Peminjaman::with('user')
+                    ->where('buku_id', $id)
+                    ->latest()
+                    ->take(5)
+                    ->get();
+
+        return view('pages.backend.buku.show', compact('buku', 'riwayat'));
+    }
+
     public function create()
     {
-        // Ambil semua kategori untuk dikirim ke form
         $categories = Category::orderBy('name', 'asc')->get();
         return view('pages.backend.buku.create', compact('categories'));
     }
@@ -41,14 +57,15 @@ class BukuController extends Controller
             'penulis' => 'required',
             'tahun_terbit' => 'required',
             'stok' => 'required|integer',
-            'category_id' => 'required|exists:categories,id', // Tambahkan validasi kategori
+            'category_id' => 'required|exists:categories,id',
             'cover' => 'nullable|image'
         ]);
 
         $data = $request->all();
 
         if ($request->hasFile('cover')) {
-            $data['cover'] = $request->file('cover')->store('buku', 'public');
+            // Kita simpan ke folder 'cover-img' agar sesuai dengan data awalmu
+            $data['cover'] = $request->file('cover')->store('cover-img', 'public');
         }
 
         Buku::create($data);
@@ -59,7 +76,6 @@ class BukuController extends Controller
     public function edit($id)
     {
         $buku = Buku::findOrFail($id);
-        // Tambahkan kategori juga di halaman edit
         $categories = Category::orderBy('name', 'asc')->get();
         return view('pages.backend.buku.edit', compact('buku', 'categories'));
     }
@@ -73,19 +89,17 @@ class BukuController extends Controller
             'penulis' => 'required',
             'tahun_terbit' => 'required',
             'stok' => 'required|integer',
-            'category_id' => 'required|exists:categories,id', // Tambahkan validasi kategori
+            'category_id' => 'required|exists:categories,id',
             'cover' => 'nullable|image'
         ]);
 
         $data = $request->all();
 
         if ($request->hasFile('cover')) {
-            // hapus lama
             if ($buku->cover && Storage::disk('public')->exists($buku->cover)) {
                 Storage::disk('public')->delete($buku->cover);
             }
-
-            $data['cover'] = $request->file('cover')->store('buku', 'public');
+            $data['cover'] = $request->file('cover')->store('cover-img', 'public');
         }
 
         $buku->update($data);

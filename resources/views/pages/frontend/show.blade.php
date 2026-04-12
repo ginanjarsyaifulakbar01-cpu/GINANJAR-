@@ -148,16 +148,6 @@
 </style>
 
 <div class="container detail-container">
-    {{-- NAVIGASI ATAS --}}
-    <nav style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
-        <a href="{{ route('katalog') }}" style="text-decoration: none; color: #64748b; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            <i class="fas fa-arrow-left"></i> Kembali ke Katalog
-        </a>
-        
-        <a href="{{ route('riwayat.pinjam') }}" style="text-decoration: none; color: #2563eb; font-weight: 700; display: flex; align-items: center; gap: 8px; background: #dbeafe; padding: 10px 20px; border-radius: 14px; font-size: 14px;">
-            <i class="fas fa-history"></i> Riwayat Pinjam Saya
-        </a>
-    </nav>
 
     <div class="detail-wrapper">
         <div class="detail-cover-wrapper">

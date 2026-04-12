@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Carbon\Carbon;
 
 class Peminjaman extends Model
 {
     use HasFactory;
 
-    // Paksa nama tabel agar tidak menjadi 'peminjamen'
+    // Paksa nama tabel agar tidak menjadi 'peminjamen' secara otomatis oleh Laravel
     protected $table = 'peminjamans';
 
     protected $fillable = [
@@ -42,13 +43,12 @@ class Peminjaman extends Model
     {
         $tarifPerHari = 5000;
 
-        // 1. Jika status dikembalikan, gunakan nilai denda yang sudah di-lock (disimpan) di DB
+        // 1. Jika status dikembalikan, gunakan nilai denda yang sudah tersimpan di database
         if ($this->status === 'dikembalikan') {
             return max(0, $this->total_denda ?? 0);
         }
 
-        // 2. Jika status AKTIF (pinjam atau proses_kembali), hitung denda LIVE berdasarkan hari ini
-        // Ini memastikan di Dashboard Admin/User denda akan muncul meskipun di DB masih 0
+        // 2. Jika status pinjam atau proses_kembali, hitung denda LIVE berdasarkan hari ini
         if (in_array($this->status, ['pinjam', 'proses_kembali'])) {
             $tglHarusKembali = Carbon::parse($this->tgl_kembali)->startOfDay();
             $hariIni = Carbon::now()->startOfDay();
@@ -63,29 +63,32 @@ class Peminjaman extends Model
     }
 
     /**
-     * Helper: Mengecek apakah transaksi ini sudah terlambat
-     * Digunakan untuk memicu label "TERLAMBAT" di UI
+     * Helper: Mengecek apakah transaksi ini sudah melewati batas waktu
      */
     public function getIsTerlambatAttribute()
     {
-        // Jika sudah kembali, cek apakah saat dikembalikan ada denda
         if ($this->status === 'dikembalikan') {
             return $this->total_denda > 0;
         }
         
-        // Jika belum kembali, bandingkan hari ini dengan tgl_kembali
         return Carbon::now()->startOfDay()->gt(Carbon::parse($this->tgl_kembali)->startOfDay());
     }
 
     /* --- RELASI --- */
 
-    public function user()
+    /**
+     * Relasi ke model User (Peminjam)
+     */
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function buku()
+    /**
+     * Relasi ke model Buku
+     */
+    public function buku(): BelongsTo
     {
-        return $this->belongsTo(Buku::class);
+        return $this->belongsTo(Buku::class, 'buku_id');
     }
 }

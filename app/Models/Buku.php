@@ -4,20 +4,30 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany; // Tambahkan import ini
 
 class Buku extends Model
 {
     protected $table = 'bukus';
     
-    // Ini berarti semua kolom boleh diisi (judul, penulis, category_id, dll)
+    // Semua kolom boleh diisi
     protected $guarded = [];
 
     /**
      * Relasi ke model Category
-     * Hubungkan category_id di tabel bukus ke id di tabel categories
      */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    /**
+     * Relasi ke model Peminjaman
+     * Method ini WAJIB ADA agar ->withCount('peminjaman') di Controller bisa jalan
+     */
+    public function peminjaman(): HasMany
+    {
+        // Hubungkan id di tabel bukus ke buku_id di tabel peminjamans
+        return $this->hasMany(Peminjaman::class, 'buku_id');
     }
 }

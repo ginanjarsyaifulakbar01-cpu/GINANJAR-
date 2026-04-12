@@ -10,7 +10,6 @@ use App\Http\Controllers\backend\CategoryController;
 use App\Http\Controllers\backend\PeminjamanController;
 
 /*
-
 |--------------------------------------------------------------------------
 | Web Routes - Perpustakaan Digital
 |--------------------------------------------------------------------------
@@ -31,15 +30,15 @@ Route::middleware('auth')->group(function () {
     // --- FRONTEND ROUTES (User/Anggota) ---
     Route::get('/home', [FrontendController::class, 'index'])->name('home'); 
     Route::get('/katalog', [FrontendController::class, 'katalog'])->name('katalog');
-    Route::get('/buku/{id}', [FrontendController::class, 'detail'])->name('buku.detail');
+    
+    // Detail Buku untuk Anggota (Melihat sinopsis & tombol pinjam)
+    Route::get('/buku/{id}/detail', [FrontendController::class, 'detail'])->name('buku.detail');
+    
     Route::get('/profile', function () { return view('pages.frontend.profile'); })->name('profile');
     Route::get('/riwayat-pinjam', [FrontendController::class, 'riwayatPinjam'])->name('riwayat.pinjam');
     Route::get('/peminjaman/detail/{id}', [FrontendController::class, 'detailPeminjaman'])->name('peminjaman.detail'); 
     
-    /** 
-     * ALUR PEMINJAMAN (FE)
-     * Menggunakan PeminjamanController agar logika terpusat
-     */
+    // ALUR PEMINJAMAN (FE)
     Route::post('/buku/{id}/ajukan', [PeminjamanController::class, 'ajukan'])->name('peminjaman.ajukan');
     Route::post('/peminjaman/{id}/proses-kembali', [PeminjamanController::class, 'prosesKembalikan'])->name('peminjaman.proses_kembali');
     Route::post('/peminjaman/{id}/bayar-denda', [PeminjamanController::class, 'bayarDenda'])->name('peminjaman.bayar_denda');
@@ -53,15 +52,20 @@ Route::middleware('auth')->group(function () {
         
         // MANAJEMEN PEMINJAMAN (BE)
         Route::get('/peminjaman', [PeminjamanController::class, 'index'])->name('peminjaman.index');
-        
-        // Approve Pinjam (Pending -> Pinjam)
         Route::post('/peminjaman/{id}/review', [PeminjamanController::class, 'review'])->name('peminjaman.review');
-        
-        // Approve Kembali (Proses Kembali -> Dikembalikan) + Verifikasi Foto Denda
         Route::post('/peminjaman/{id}/review-kembali', [PeminjamanController::class, 'review_kembali'])->name('peminjaman.review_kembali');
 
         // MASTER DATA
+        // Route::resource 'buku' mencakup:
+        // index   -> admin/buku (GET)
+        // create  -> admin/buku/create (GET)
+        // store   -> admin/buku (POST)
+        // show    -> admin/buku/{buku} (GET)  <-- INI DETAIL BUKU BE
+        // edit    -> admin/buku/{buku}/edit (GET)
+        // update  -> admin/buku/{buku} (PUT)
+        // destroy -> admin/buku/{buku} (DELETE)
         Route::resource('buku', BukuController::class);
+        
         Route::resource('categories', CategoryController::class);
         Route::resource('user', UserBackendController::class)->middleware('role:admin');
     });
