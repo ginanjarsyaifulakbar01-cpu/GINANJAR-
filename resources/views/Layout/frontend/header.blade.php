@@ -10,14 +10,14 @@
                 @auth
                     <li><a href="{{ route('home') }}">Beranda</a></li>
                     <li><a href="{{ route('katalog') }}">Katalog</a></li>
-                    
+
                     {{-- LINK RIWAYAT PINJAM DI NAVIGASI UTAMA --}}
                     <li>
                         <a href="{{ route('riwayat.pinjam') }}" class="d-flex align-items-center">
                             Riwayat Pinjam
                         </a>
                     </li>
-                    
+
                     @if(Auth::user()->role == 'admin' || Auth::user()->role == 'petugas')
                         <li><a href="{{ route('admin.dashboard') }}" class="admin-link">Panel Admin</a></li>
                     @endif
@@ -28,11 +28,11 @@
                         <a href="#" class="user-info-link">
                             <div class="user-info">
                                 <span class="user-name">{{ Auth::user()->name }}</span>
-                                <img src="{{ Auth::user()->avatar ? asset('storage/'.Auth::user()->avatar) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=2563eb&color=fff' }}" 
-                                     alt="User">
+                                <img src="{{ Auth::user()->avatar ? asset('storage/' . Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&background=2563eb&color=fff' }}"
+                                    alt="User">
                             </div>
                         </a>
-                        
+
                         <div class="dropdown-content">
                             <a href="{{ route('profile') }}" class="dropdown-item">
                                 <i class="fas fa-user-circle"></i> Profil Saya
@@ -44,7 +44,7 @@
                             </a>
 
                             <hr style="margin: 0; border: 0.5px solid #f1f5f9;">
-                            
+
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button type="submit" class="logout-btn">
@@ -137,8 +137,9 @@
         right: 0;
         top: 100%;
         background-color: white;
-        min-width: 180px; /* Lebarkan sedikit agar teks tidak kepotong */
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        min-width: 180px;
+        /* Lebarkan sedikit agar teks tidak kepotong */
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         border-radius: 12px;
         overflow: hidden;
         z-index: 1000;
@@ -197,5 +198,8 @@
         text-decoration: none;
         color: #1e293b;
     }
-    .logo span { color: #2563eb; }
+
+    .logo span {
+        color: #2563eb;
+    }
 </style>

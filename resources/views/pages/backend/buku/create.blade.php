@@ -8,6 +8,7 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    padding: 20px;
   }
 
   /* TITLE */
@@ -48,7 +49,8 @@
     margin-bottom: 6px;
   }
 
-  .form-input, .form-select {
+  .form-input,
+  .form-select {
     width: 100%;
     border: none;
     border-bottom: 1.5px solid #ddd;
@@ -65,7 +67,8 @@
     color: #bbb;
   }
 
-  .form-input:focus, .form-select:focus {
+  .form-input:focus,
+  .form-select:focus {
     border-bottom-color: #7c3aff;
   }
 
@@ -81,8 +84,8 @@
     color: #333;
   }
 
-  /* Biar placeholder select warna abu-abu */
-  .form-select:invalid, .form-select option[value=""] {
+  .form-select:invalid,
+  .form-select option[value=""] {
     color: #bbb;
   }
 
@@ -169,98 +172,125 @@
   .btn-cancel:hover {
     color: #f5364f;
   }
+
+  /* ALERT ERROR */
+  .alert-error {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    border: 1px solid #fecaca;
+    width: 100%;
+    max-width: 780px;
+  }
 </style>
 
 @section('content')
-<div class="form-wrapper">
+  <div class="form-wrapper">
 
-  <div class="page-title">Halaman Tambah Buku</div>
+    <div class="page-title">Halaman Tambah Buku</div>
 
-  <div class="form-card">
-    <div class="form-card-title">Form Tambah Buku</div>
-
-    <form action="{{ route('buku.store') }}" method="POST" enctype="multipart/form-data">
-      @csrf
-
-      <div class="form-group">
-        <label class="form-label">Judul Buku</label>
-        <input type="text" name="judul" class="form-input" placeholder="Masukkan Judul Buku" value="{{ old('judul') }}">
-        @error('judul')
-          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
-        @enderror
+    {{-- ALERT ERROR --}}
+    @if ($errors->any())
+      <div class="alert-error">
+        <div style="font-weight: 700; margin-bottom: 5px;">Gagal Simpan Data:</div>
+        <ul style="margin: 0; padding-left: 20px;">
+          @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+          @endforeach
+        </ul>
       </div>
+    @endif
 
-      <div class="form-group">
-        <label class="form-label">Penulis</label>
-        <input type="text" name="penulis" class="form-input" placeholder="Nama Penulis" value="{{ old('penulis') }}">
-        @error('penulis')
-          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
-        @enderror
-      </div>
+    <div class="form-card">
+      <div class="form-card-title">Form Tambah Buku</div>
 
-      <div class="form-group">
-        <label class="form-label">Tahun Terbit</label>
-        <input type="text" name="tahun_terbit" class="form-input" placeholder="Contoh: 2024" value="{{ old('tahun_terbit') }}">
-        @error('tahun_terbit')
-          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
-        @enderror
-      </div>
+      <form action="{{ route('buku.store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
 
-      <div class="form-group">
-        <label class="form-label">Stok</label>
-        <div class="select-wrap">
-          <select name="stok" class="form-select">
-            <option value="" disabled selected hidden>Pilih Jumlah Stok</option>
-            @foreach([1, 2, 3, 4, 5, 10, 20, 50] as $s)
-              <option value="{{ $s }}" {{ old('stok') == $s ? 'selected' : '' }}>{{ $s }}</option>
-            @endforeach
-          </select>
-          <i class="fas fa-chevron-down select-arrow"></i>
+        <div class="form-group">
+          <label class="form-label">Judul Buku</label>
+          <input type="text" name="judul" class="form-input" placeholder="Masukkan Judul Buku" value="{{ old('judul') }}">
+          @error('judul')
+            <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+          @enderror
         </div>
-        @error('stok')
-          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
-        @enderror
-      </div>
 
-      {{-- INPUT CATEGORY DARI CRUD CATEGORY --}}
-      <div class="form-group">
-        <label class="form-label">Kategori</label>
-        <div class="select-wrap">
-          <select name="category_id" class="form-select" required>
-            <option value="" disabled selected hidden>Pilih Kategori Buku</option>
-            @foreach($categories as $cat)
-              <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
-                {{ $cat->name }}
-              </option>
-            @endforeach
-          </select>
-          <i class="fas fa-chevron-down select-arrow"></i>
+        <div class="form-group">
+          <label class="form-label">Penulis</label>
+          <input type="text" name="penulis" class="form-input" placeholder="Nama Penulis" value="{{ old('penulis') }}">
+          @error('penulis')
+            <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+          @enderror
         </div>
-        @error('category_id')
-          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
-        @enderror
-      </div>
 
-      <div class="form-group">
-        <label class="form-label">Cover Buku</label>
-        <div class="upload-wrap">
-          <span class="upload-placeholder" id="upload-label">Format: JPG, PNG, WebP</span>
-          <button type="button" class="btn-upload" onclick="document.getElementById('cover-input').click()">Upload</button>
-          <input type="file" id="cover-input" name="cover" accept="image/*" style="display:none"
-            onchange="document.getElementById('upload-label').textContent = this.files[0]?.name || 'Format: JPG, PNG, WebP'">
+        <div class="form-group">
+          <label class="form-label">Tahun Terbit</label>
+          <input type="text" name="tahun_terbit" class="form-input" placeholder="Contoh: 2024"
+            value="{{ old('tahun_terbit') }}">
+          @error('tahun_terbit')
+            <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+          @enderror
         </div>
-        @error('cover')
-          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
-        @enderror
-      </div>
 
-      <div class="form-actions">
-        <button type="submit" class="btn-submit">Simpan Buku</button>
-        <a href="{{ route('buku.index') }}" class="btn-cancel">Batal</a>
-      </div>
+        <div class="form-group">
+          <label class="form-label">Stok</label>
+          <div class="select-wrap">
+            <select name="stok" class="form-select">
+              <option value="" disabled selected hidden>Pilih Jumlah Stok</option>
+              @foreach([1, 2, 3, 4, 5, 10, 20, 50] as $s)
+                <option value="{{ $s }}" {{ old('stok') == $s ? 'selected' : '' }}>{{ $s }}</option>
+              @endforeach
+            </select>
+            <i class="fas fa-chevron-down select-arrow"></i>
+          </div>
+          @error('stok')
+            <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+          @enderror
+        </div>
 
-    </form>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <div class="select-wrap">
+            <select name="category_id" class="form-select" required>
+              <option value="" disabled selected hidden>Pilih Kategori Buku</option>
+              @foreach($categories as $cat)
+                <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
+                  {{-- Perbaikan: menggunakan $cat->name agar sinkron dengan Controller --}}
+                  {{ $cat->name }}
+                </option>
+              @endforeach
+            </select>
+            <i class="fas fa-chevron-down select-arrow"></i>
+          </div>
+          @error('category_id')
+            <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+          @enderror
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cover Buku</label>
+          <div class="upload-wrap">
+            <span class="upload-placeholder" id="upload-label">Format: JPG, PNG, WebP</span>
+            <button type="button" class="btn-upload"
+              onclick="document.getElementById('cover-input').click()">Upload</button>
+            <input type="file" id="cover-input" name="cover" accept="image/*" style="display:none"
+              onchange="document.getElementById('upload-label').textContent = this.files[0]?.name || 'Format: JPG, PNG, WebP'">
+          </div>
+          @error('cover')
+            <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+          @enderror
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-submit">Simpan Buku</button>
+          <a href="{{ route('buku.index') }}" class="btn-cancel">Batal</a>
+        </div>
+
+      </form>
+    </div>
+
   </div>
-
-</div>
 @endsection
