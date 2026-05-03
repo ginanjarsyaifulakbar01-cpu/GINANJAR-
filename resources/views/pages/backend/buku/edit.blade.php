@@ -8,12 +8,15 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    padding: 40px 0;
   }
 
   /* TITLE */
   .page-title {
     text-align: center;
     margin-bottom: 20px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
   }
 
   /* FORM CARD */
@@ -59,10 +62,6 @@
     transition: border-color 0.2s;
   }
 
-  .form-input::placeholder {
-    color: #bbb;
-  }
-
   .form-input:focus {
     border-bottom-color: #7c3aff;
   }
@@ -80,7 +79,7 @@
     padding: 8px 30px 8px 2px;
     font-family: 'Poppins', sans-serif;
     font-size: 12.5px;
-    color: #bbb;
+    color: #333;
     outline: none;
     background: transparent;
     appearance: none;
@@ -90,7 +89,6 @@
 
   .form-select:focus {
     border-bottom-color: #7c3aff;
-    color: #333;
   }
 
   .select-arrow {
@@ -129,56 +127,6 @@
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
-    flex-shrink: 0;
-  }
-
-  .btn-upload:hover {
-    background: #3a6bc7;
-  }
-
-  /* KATEGORI */
-  .kategori-area {
-    width: 100%;
-    border-bottom: 1.5px solid #ddd;
-    min-height: 36px;
-    padding: 6px 2px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-    cursor: text;
-  }
-
-  .kategori-chip {
-    background: #ede8ff;
-    color: #7c3aff;
-    border-radius: 20px;
-    padding: 3px 12px;
-    font-size: 11.5px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .kategori-chip .remove {
-    cursor: pointer;
-    font-size: 10px;
-    color: #b06aff;
-  }
-
-  .kategori-input {
-    border: none;
-    outline: none;
-    font-family: 'Poppins', sans-serif;
-    font-size: 12.5px;
-    color: #333;
-    background: transparent;
-    min-width: 80px;
-  }
-
-  .kategori-input::placeholder {
-    color: #bbb;
   }
 
   /* BUTTONS */
@@ -199,27 +147,16 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .btn-submit:hover {
-    background: #6228e0;
   }
 
   .btn-cancel {
     background: transparent;
     color: #555;
     border: none;
-    padding: 10px 18px;
+    text-decoration: none;
     font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 500;
-    cursor: pointer;
-    transition: color 0.2s;
-  }
-
-  .btn-cancel:hover {
-    color: #f5364f;
   }
 </style>
 
@@ -235,71 +172,96 @@
       @csrf
       @method('PUT')
 
+      {{-- Judul Buku --}}
       <div class="form-group">
         <label class="form-label">Judul Buku</label>
-        <input type="text" name="judul" class="form-input"
-          value="{{ old('judul', $buku->judul) }}">
+        <input type="text" name="judul" class="form-input" value="{{ old('judul', $buku->judul) }}">
         @error('judul')
           <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
         @enderror
       </div>
 
+      {{-- Penulis --}}
       <div class="form-group">
         <label class="form-label">Penulis</label>
-        <input type="text" name="penulis" class="form-input"
-          value="{{ old('penulis', $buku->penulis) }}">
+        <input type="text" name="penulis" class="form-input" value="{{ old('penulis', $buku->penulis) }}">
         @error('penulis')
           <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
         @enderror
       </div>
 
+      {{-- Tahun Terbit --}}
       <div class="form-group">
         <label class="form-label">Tahun Terbit</label>
-        <input type="text" name="tahun_terbit" class="form-input"
-          value="{{ old('tahun_terbit', $buku->tahun_terbit) }}">
+        <input type="text" name="tahun_terbit" class="form-input" value="{{ old('tahun_terbit', $buku->tahun_terbit) }}">
         @error('tahun_terbit')
           <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
         @enderror
       </div>
 
+      {{-- Kategori (TAMBAHAN BIAR TIDAK BUG) --}}
+      <div class="form-group">
+        <label class="form-label">Kategori</label>
+        <div class="select-wrap">
+          <select name="category_id" class="form-select">
+            <option value="" disabled>Pilih Kategori</option>
+            @foreach($categories as $cat)
+              <option value="{{ $cat->id }}" 
+                {{ old('category_id', $buku->category_id) == $cat->id ? 'selected' : '' }}>
+                {{ $cat->name }}
+              </option>
+            @endforeach
+          </select>
+          <i class="fas fa-chevron-down select-arrow"></i>
+        </div>
+        @error('category_id')
+          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+        @enderror
+      </div>
+
+      {{-- Stok --}}
       <div class="form-group">
         <label class="form-label">Stok</label>
         <div class="select-wrap">
           <select name="stok" class="form-select">
             <option value="" disabled hidden>Pilih stok</option>
-            @foreach([1,2,3,4,5,10] as $s)
-              <option value="{{ $s }}"
-                {{ old('stok', $buku->stok) == $s ? 'selected' : '' }}>
+            @foreach([1,2,3,4,5,10,20,50] as $s)
+              <option value="{{ $s }}" {{ old('stok', $buku->stok) == $s ? 'selected' : '' }}>
                 {{ $s }}
               </option>
             @endforeach
           </select>
           <i class="fas fa-chevron-down select-arrow"></i>
         </div>
+        @error('stok')
+          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+        @enderror
       </div>
 
+      {{-- Cover --}}
       <div class="form-group">
         <label class="form-label">Cover</label>
 
-        {{-- Preview gambar lama --}}
         @if($buku->cover)
           <div style="margin-bottom:10px;">
-            <img src="{{ asset('storage/'.$buku->cover) }}" width="100" style="border-radius:8px;">
+            <img src="{{ asset('storage/'.$buku->cover) }}" width="100" style="border-radius:8px; border: 1px solid #ddd;">
           </div>
         @endif
 
         <div class="upload-wrap">
           <span class="upload-placeholder" id="upload-label">Ganti Image (opsional)</span>
-          <button type="button" class="btn-upload"
-            onclick="document.getElementById('cover-input').click()">Upload</button>
+          <button type="button" class="btn-upload" onclick="document.getElementById('cover-input').click()">Upload</button>
           <input type="file" id="cover-input" name="cover" accept="image/*" style="display:none"
             onchange="document.getElementById('upload-label').textContent = this.files[0]?.name || 'Upload Image'">
         </div>
+        @error('cover')
+          <small style="color:#f5364f;font-size:11px;">{{ $message }}</small>
+        @enderror
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn-submit">Update</button>
-        <a href="/buku" class="btn-cancel">Cancel</a>
+        <button type="submit" class="btn-submit">Update Buku</button>
+        <a href="{{ route('buku.index') }}" class="btn-cancel">Cancel</a>
       </div>
 
     </form>

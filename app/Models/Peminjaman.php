@@ -11,7 +11,6 @@ class Peminjaman extends Model
 {
     use HasFactory;
 
-    // Paksa nama tabel agar tidak menjadi 'peminjamen' secara otomatis oleh Laravel
     protected $table = 'peminjamans';
 
     protected $fillable = [
@@ -26,67 +25,57 @@ class Peminjaman extends Model
         'bukti_bayar'
     ];
 
-    /**
-     * Casts: Mengubah string tanggal dari DB menjadi objek Carbon secara otomatis
-     */
     protected $casts = [
         'tgl_pinjam' => 'date',
         'tgl_kembali' => 'date',
         'tgl_realisasi_kembali' => 'date',
+        'total_denda' => 'integer',
     ];
 
     /**
-     * Accessor Denda: Menghitung denda secara otomatis dan real-time
-     * Cara panggil di Blade: {{ $p->denda }}
+     * Accessor Denda: Menghitung denda secara otomatis.
+     * Logika: Jika buku sudah balik, ambil nilai di DB. Jika belum, hitung LIVE.
      */
     public function getDendaAttribute()
     {
-        $tarifPerHari = 5000;
-
-        // 1. Jika status dikembalikan, gunakan nilai denda yang sudah tersimpan di database
+        // 1. Jika sudah selesai, prioritaskan nilai yang sudah 'mati' di database
         if ($this->status === 'dikembalikan') {
-            return max(0, $this->total_denda ?? 0);
+            return $this->total_denda ?? 0;
         }
 
-        // 2. Jika status pinjam atau proses_kembali, hitung denda LIVE berdasarkan hari ini
-        if (in_array($this->status, ['pinjam', 'proses_kembali'])) {
-            $tglHarusKembali = Carbon::parse($this->tgl_kembali)->startOfDay();
-            $hariIni = Carbon::now()->startOfDay();
+        // 2. Hitung Live untuk status 'pinjam' atau 'proses_kembali'
+        $tglJatuhTempo = Carbon::parse($this->tgl_kembali)->startOfDay();
+        $hariIni = Carbon::now()->startOfDay();
 
-            if ($hariIni->gt($tglHarusKembali)) {
-                $selisihHari = $hariIni->diffInDays($tglHarusKembali);
-                return $selisihHari * $tarifPerHari;
-            }
+        if ($hariIni->gt($tglJatuhTempo)) {
+            $selisihHari = $hariIni->diffInDays($tglJatuhTempo);
+            return $selisihHari * 5000;
         }
 
         return 0;
     }
 
     /**
-     * Helper: Mengecek apakah transaksi ini sudah melewati batas waktu
+     * Helper Terlambat: Digunakan untuk memicu label "TERLAMBAT" di Blade
      */
     public function getIsTerlambatAttribute()
     {
+        // Jika sudah kembali, cek apakah dulu pernah denda
         if ($this->status === 'dikembalikan') {
-            return $this->total_denda > 0;
+            return ($this->total_denda ?? 0) > 0;
         }
         
+        // Jika masih dipinjam, bandingkan dengan waktu sekarang
         return Carbon::now()->startOfDay()->gt(Carbon::parse($this->tgl_kembali)->startOfDay());
     }
 
     /* --- RELASI --- */
 
-    /**
-     * Relasi ke model User (Peminjam)
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Relasi ke model Buku
-     */
     public function buku(): BelongsTo
     {
         return $this->belongsTo(Buku::class, 'buku_id');
